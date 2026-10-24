@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light" data-pref="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Norlens | Riset dan Prediksi Saham Indonesia</title>
+ 
+<!-- Terapkan tema sebelum halaman tampil agar tidak berkedip -->
+<script>
+(function () {
+    try {
+        var pref = localStorage.getItem("norlens-theme") || localStorage.getItem("eqlens-theme") || "auto";
+        var dark = pref === "dark" ||
+            (pref === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.documentElement.dataset.pref = pref;
+    } catch (e) {}
+})();
+</script>
+ 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+ 
+<style>
+/* Norlens Pro: tampilan ala platform charting. Muat SETELAH <style> utama. */
+[data-theme="dark"] {
+    --bg: #131722; --surface: #1e222d; --surface2: #2a2e39; --line: #363a45;
+    --text: #d1d4dc; --muted: #868993; --brand: #2962ff; --brand-ink: #ffffff;
+    --c1: #4c82ff; --c2: #26a69a; --c3: #ff9800;
+    --up: #26a69a; --down: #ef5350;
+    --upbg: rgba(38,166,154,.16); --downbg: rgba(239,83,80,.16); --warnbg: rgba(255,152,0,.16);
+}
+[data-theme="light"] {
+    --bg: #f0f3fa; --surface: #ffffff; --surface2: #f8f9fd; --line: #e0e3eb;
+    --text: #131722; --muted: #6a6d78; --brand: #2962ff; --brand-ink: #ffffff;
+    --c1: #2962ff; --c2: #089981; --c3: #f57c00;
+    --up: #089981; --down: #f23645;
+    --upbg: #e3f5f1; --downbg: #fdeaec; --warnbg: #fff1de;
+}
+ 
+.topbar { background: var(--surface); backdrop-filter: none; }
+.topbar-inner, main { max-width: 1440px; }
+ 
+.brand-mark {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--brand); color: #fff;
+    display: grid; place-items: center; font-weight: 700; font-size: 22px; line-height: 1;
+    letter-spacing: -1px; padding-bottom: 3px;
+}
+ 
+.panel { border-radius: 6px; padding: 16px; }
+.kpis, .stat, .offer { border-radius: 6px; }
+.btn, .search input, .seg { border-radius: 6px; }
+.panel h2 { font-size: 15px; letter-spacing: .2px; }
+.panel h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+.ticker { border-radius: 4px; letter-spacing: .5px; }
+.hero h1 { font-size: 26px; }
+.price { font-size: 36px; }
+ 
+#priceChart, #flowChart {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 6px;
+}
+.gl { stroke-opacity: .55; }
+ 
+:root {
+    --bg: #f2f4f8;
+    --surface: #ffffff;
+    --surface2: #f6f8fb;
+    --line: #e1e6ee;
+    --text: #101a2c;
+    --muted: #5b6880;
+    --brand: #2f4fd0;
+    --brand-ink: #ffffff;
+    --c1: #2f4fd0;
+    --c2: #0f9488;
+    --c3: #d9840b;
+    --up: #13803f;
+    --down: #c62828;
+    --upbg: #e6f5ec;
+    --downbg: #fdeaea;
+    --warnbg: #fff3df;
+    color-scheme: light;
+}
+ 
+[data-theme="dark"] {
+    --bg: #0a101c;
+    --surface: #111a2b;
+    --surface2: #16213a;
+    --line: #25314b;
+    --text: #e8eefa;
+    --muted: #93a1bd;
+    --brand: #7b95ff;
+    --brand-ink: #0a101c;
+    --c1: #7b95ff;
+    --c2: #2dd4bf;
+    --c3: #fbbf24;
+    --up: #4ade80;
+    --down: #f87171;
+    --upbg: #10301f;
+    --downbg: #3a1618;
+    --warnbg: #3a2a0e;
+    color-scheme: dark;
+}
+ 
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+ 
+body {
+    margin: 0;
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    font-variant-numeric: tabular-nums;
+}
+ 
+@media (prefers-reduced-motion: no-preference) {
+    body, .panel, .topbar, input, textarea {
+        transition: background-color .2s, border-color .2s, color .2s;
+    }
+}
+ 
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+ 
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+ 
+/* ---------- Topbar ---------- */
+.topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+    max-width: 1180px; margin: auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; letter-spacing: -.2px; background: none; border: 0; padding: 0; }
+.brand svg { width: 28px; height: 28px; }
+.search { flex: 1; min-width: 240px; display: flex; gap: 8px; }
+.search input {
+    flex: 1; min-width: 0; padding: 10px 14px; font: inherit;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--surface); color: var(--text);
+}
+.search input::placeholder { color: var(--muted); }
+.btn {
+    padding: 10px 18px; border: 0; border-radius: 8px; font-weight: 500;
+    background: var(--brand); color: var(--brand-ink);
+}
+.btn:disabled { opacity: .55; cursor: progress; }
+.btn.ghost {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--line); padding: 6px 12px; font-size: 13px;
+}
+ 
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+ 
+/* ---------- Layout ---------- */
+main { max-width: 1180px; margin: auto; padding: 20px 24px 48px; }
+.status { margin: 0 0 14px; font-size: 14px; color: var(--muted); min-height: 22px; }
+.status.error { color: var(--down); }
+body.loading .panel { opacity: .55; }
+ 
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 0;
+}
+.panel h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.panel h3 { margin: 18px 0 8px; font-size: 14px; font-weight: 600; }
+.panel .sub { margin: 2px 0 14px; font-size: 13px; color: var(--muted); }
+.stack > * + * { margin-top: 16px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+ 
+/* ---------- Hero ---------- */
+.hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 28px; }
+.ticker-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ticker { font-weight: 600; font-size: 13px; padding: 3px 10px; border-radius: 6px; background: var(--brand); color: var(--brand-ink); }
+.tag { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.hero h1 { margin: 4px 0 8px; font-size: 30px; line-height: 1.2; letter-spacing: -.4px; }
+.hero p { margin: 0; color: var(--muted); max-width: 70ch; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.link { background: none; border: 0; padding: 4px 0; color: var(--brand); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
+.chips button { border: 1px solid var(--line); background: var(--surface2); border-radius: 999px; padding: 4px 14px; font-size: 13px; }
+.chips button:hover { border-color: var(--brand); }
+ 
+.hero-price { border-left: 1px solid var(--line); padding-left: 28px; }
+.price { font-size: 40px; font-weight: 600; letter-spacing: -1px; line-height: 1.1; }
+.change { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 6px; font-size: 14px; font-weight: 500; }
+.change.up { background: var(--upbg); color: var(--up); }
+.change.down { background: var(--downbg); color: var(--down); }
+.rangebar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-top: 18px; font-size: 13px; }
+.track { position: relative; height: 6px; border-radius: 3px; background: var(--line); }
+.track i { position: absolute; top: -4px; width: 4px; height: 14px; border-radius: 2px; background: var(--brand); transform: translateX(-50%); }
+ 
+/* ---------- KPI & tile ---------- */
+.kpis {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+}
+.kpi { background: var(--surface); padding: 16px 18px; min-width: 0; }
+.kpi .k { font-size: 13px; color: var(--muted); }
+.kpi .v { font-size: 22px; font-weight: 600; margin: 4px 0 2px; letter-spacing: -.3px; overflow-wrap: anywhere; }
+.kpi .d { font-size: 13px; color: var(--muted); }
+.d.up { color: var(--up); }
+.d.down { color: var(--down); }
+ 
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.stats.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stats.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stat { background: var(--surface2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.stat .k { font-size: 12.5px; color: var(--muted); }
+.stat .v { font-size: 19px; font-weight: 600; margin: 2px 0; letter-spacing: -.2px; overflow-wrap: anywhere; }
+.stat .n { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.stat .v.up { color: var(--up); }
+.stat .v.down { color: var(--down); }
+ 
+/* ---------- Grafik ---------- */
+.chart { width: 100%; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.empty { color: var(--muted); font-size: 14px; padding: 36px 8px; text-align: center; margin: 0; }
+.ax { fill: var(--muted); font-size: 11px; }
+.gl { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1; opacity: .6; }
+.hit { fill: var(--text); fill-opacity: 0; }
+.hit:hover { fill-opacity: .06; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+ 
+.seg.small button { padding: 4px 10px; font-size: 12px; }
+ 
+.toggles { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; align-items: center; }
+.toggles button {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--line); background: var(--surface2); border-radius: 999px;
+    padding: 3px 12px; font-size: 12.5px; color: var(--muted);
+}
+.toggles button i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+.toggles button[aria-pressed="true"] { color: var(--text); border-color: var(--brand); }
+.toggles button[aria-pressed="false"] i { opacity: .35; }
+ 
+#tip {
+    position: fixed; display: none; z-index: 50; pointer-events: none;
+    background: var(--text); color: var(--bg);
+    padding: 8px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.5;
+    max-width: 280px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+#tip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+ 
+/* ---------- Skor ---------- */
+.score-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+.score-top { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.ring { position: relative; width: 96px; height: 96px; flex: none; }
+.ring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; font-weight: 600; }
+.axis-row { display: grid; grid-template-columns: 110px 1fr 36px; gap: 10px; align-items: center; font-size: 13px; margin: 8px 0; }
+.bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--c1); border-radius: 4px; }
+ 
+/* ---------- Asumsi ---------- */
+.assump { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; margin: 0 0 16px; }
+.assump label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.assump label b { color: var(--text); }
+.assump input[type="range"] { width: 100%; accent-color: var(--brand); margin: 6px 0 0; }
+ 
+/* ---------- Rasio ---------- */
+.ratio-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.ratio {
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center;
+}
+.ratio .n { font-weight: 500; }
+.ratio .f { grid-column: 1; font-size: 12.5px; color: var(--muted); }
+.ratio .val { grid-column: 2; grid-row: 1; font-size: 18px; font-weight: 600; text-align: right; }
+.ratio .st { grid-column: 2; grid-row: 2; justify-self: end; }
+.st { font-size: 12px; padding: 1px 8px; border-radius: 999px; }
+.st.good { background: var(--upbg); color: var(--up); }
+.st.ok { background: var(--surface2); color: var(--muted); border: 1px solid var(--line); }
+.st.warn { background: var(--warnbg); color: var(--c3); }
+.st.na { color: var(--muted); }
+ 
+/* ---------- Tabel ---------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 500; font-size: 13px; }
+td.up { color: var(--up); }
+td.down { color: var(--down); }
+tr.hl td { background: var(--surface2); font-weight: 500; }
+ 
+/* ---------- Sinyal & catatan ---------- */
+.signal-list { list-style: none; margin: 0; padding: 0; }
+.signal-list li {
+    padding: 10px 14px; margin-bottom: 8px; border-radius: 8px;
+    background: var(--surface2); font-size: 14px; border-left: 3px solid var(--line);
+}
+.signal-list.good li, .signal-list li.ok { border-left-color: var(--up); }
+.signal-list.bad li, .signal-list li.no { border-left-color: var(--down); }
+.signal-list.neutral li { border-left-color: var(--brand); }
+ 
+textarea {
+    width: 100%; min-height: 120px; padding: 12px; font: inherit; font-size: 14px;
+    border: 1px solid var(--line); border-radius: 8px; resize: vertical;
+    background: var(--surface2); color: var(--text); line-height: 1.6;
+}
+.note {
+    margin-top: 16px; padding: 14px 16px; border-radius: 10px; font-size: 14px;
+    background: var(--surface2); border: 1px solid var(--line); color: var(--muted);
+}
+footer { margin-top: 20px; font-size: 13px; color: var(--muted); }
+ 
+/* ---------- About ---------- */
+.about { max-width: 780px; margin: 0 auto; padding: 8px 0 8px; }
+.about h1 { font-size: 34px; line-height: 1.15; letter-spacing: -.6px; margin: 0 0 4px; }
+.about .lead { font-size: 18px; color: var(--muted); margin: 0 0 24px; }
+.about h2 { font-size: 20px; margin: 32px 0 8px; letter-spacing: -.2px; }
+.about p { margin: 0 0 12px; max-width: 70ch; }
+.offers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.offer { background: var(--surface2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.offer h3 { margin: 0 0 4px; font-size: 15px; }
+.offer p { margin: 0; font-size: 14px; color: var(--muted); }
+.disclaimer { border-left: 3px solid var(--c3); background: var(--warnbg); padding: 12px 16px; border-radius: 8px; font-size: 14px; }
+.tagline { margin-top: 32px; font-weight: 600; font-size: 18px; }
+ 
+/* ---------- Responsif ---------- */
+@media (max-width: 980px) {
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+    .hero { grid-template-columns: 1fr; }
+    .hero-price { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 18px; }
+}
+@media (max-width: 800px) {
+    .two, .score-grid, .ratio-list, .offers, .assump { grid-template-columns: 1fr; }
+    .stats, .stats.c3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    main { padding: 16px 14px 40px; }
+    .topbar-inner { padding: 10px 14px; }
+}
+@media (max-width: 520px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .hero h1 { font-size: 24px; }
+    .price { font-size: 32px; }
+    .about h1 { font-size: 28px; }
+}
+</style>
+</head>
+ 
+<body>
+ 
+<header class="topbar">
+    <div class="topbar-inner">
+        <button class="brand" type="button" id="brandBtn" aria-label="Norlens, ke halaman riset">
+            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <circle cx="14" cy="14" r="9" stroke="var(--brand)" stroke-width="2.5"/>
+                <path d="M9 17l3.5-3.5 2.5 2.5 4-5" stroke="var(--c2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 21l7 7" stroke="var(--brand)" stroke-width="2.8" stroke-linecap="round"/>
+            </svg>
+            Norlens
+        </button>
+ 
+        <div class="seg" role="group" aria-label="Navigasi" id="navSeg">
+            <button type="button" data-view="app" aria-pressed="true">Riset</button>
+            <button type="button" data-view="about" aria-pressed="false">About</button>
+        </div>
+ 
+        <form class="search" id="searchForm">
+            <label for="stockSymbol" hidden>Kode saham BEI</label>
+            <input type="text" id="stockSymbol" placeholder="Kode saham BEI, mis. BBCA, TLKM, ICBP"
+                   autocomplete="off" required>
+            <button class="btn" type="submit" id="searchButton">Cari</button>
+        </form>
+ 
+        <div class="seg" role="group" aria-label="Tema tampilan" id="themeSeg">
+            <button type="button" data-pref="light" aria-pressed="false">Terang</button>
+            <button type="button" data-pref="dark" aria-pressed="false">Gelap</button>
+            <button type="button" data-pref="auto" aria-pressed="true">Otomatis</button>
+        </div>
+    </div>
+</header>
+ 
+<main>
+ 
+<!-- =====================================================
+     HALAMAN RISET
+     ===================================================== -->
+<div id="viewApp">
+    <p class="status" id="searchMessage" role="status">Masukkan kode saham yang ingin diteliti.</p>
+ 
+    <div class="stack">
+ 
+        <!-- ===== Hero ===== -->
+        <section class="panel hero">
+            <div>
+                <div class="ticker-line">
+                    <span class="ticker" id="heroTicker">IDX</span>
+                    <span id="companyTags" style="display:contents"></span>
+                </div>
+                <h1 id="companyName">Prediksi saham berbasis fundamental, dari angka ke keputusan</h1>
+                <p id="companyDescription" class="clamp">
+                    Cari kode saham untuk melihat harga wajar, skenario proyeksi laba, ekspektasi pasar yang
+                    tersirat di harga, kualitas bisnis, dan pergerakan harga dengan indikator teknikal.
+                </p>
+                <button class="link" id="descToggle" hidden>Selengkapnya</button>
+                <div class="chips" id="quickChips">
+                    <span class="small muted">Coba:</span>
+                    <button type="button">BBCA</button>
+                    <button type="button">TLKM</button>
+                    <button type="button">ICBP</button>
+                    <button type="button">ASII</button>
+                    <button type="button">BMRI</button>
+                </div>
+            </div>
+ 
+            <div class="hero-price">
+                <div class="muted small">Harga terakhir</div>
+                <div class="price" id="stockPrice">-</div>
+                <span class="change" id="priceChange" hidden></span>
+                <div id="rangeBox"></div>
+                <p class="muted small" id="priceUpdated" style="margin-top:12px">Harga belum dimuat.</p>
+            </div>
+        </section>
+ 
+        <!-- ===== KPI ===== -->
+        <section class="kpis" aria-label="Ringkasan angka utama">
+            <div class="kpi"><div class="k">Pendapatan</div><div class="v" id="revenue">-</div><div class="d" id="revenueD">&nbsp;</div></div>
+            <div class="kpi"><div class="k">Laba bersih</div><div class="v" id="profit">-</div><div class="d" id="profitD">&nbsp;</div></div>
+            <div class="kpi"><div class="k">ROE</div><div class="v" id="kRoe">-</div><div class="d">Laba / ekuitas</div></div>
+            <div class="kpi"><div class="k">EPS</div><div class="v" id="kEps">-</div><div class="d" id="kEpsD">Laba per saham</div></div>
+            <div class="kpi"><div class="k">PER</div><div class="v" id="kPer">-</div><div class="d">Harga / EPS</div></div>
+            <div class="kpi"><div class="k">PBV</div><div class="v" id="kPbv">-</div><div class="d">Harga / nilai buku</div></div>
+        </section>
+ 
+        <!-- ===== Prediksi Norlens ===== -->
+        <section class="panel">
+            <div class="head">
+                <div>
+                    <h2>Prediksi Norlens</h2>
+                    <p class="sub">Outlook gabungan dari fundamental (40%), valuasi (40%), dan momentum harga (20%). Ini estimasi model dengan asumsi yang bisa kamu ubah, bukan jaminan hasil.</p>
+                </div>
+                <span class="st na" id="outlookTag">Belum ada data</span>
+            </div>
+            <div class="score-grid">
+                <div>
+                    <div class="score-top">
+                        <div class="ring" id="predRing"></div>
+                        <div>
+                            <div style="font-weight:600" id="predTitle">Belum ada prediksi</div>
+                            <div class="small muted" id="predText">Cari kode saham terlebih dahulu.</div>
+                        </div>
+                    </div>
+                    <div id="predBars"></div>
+                </div>
+                <div class="stats c2" id="predFacts"></div>
+            </div>
+            <h3>Alasan di balik outlook</h3>
+            <ul class="signal-list neutral" id="predWhy"><li>Belum ada data.</li></ul>
+        </section>
+ 
+        <!-- ===== Peta harga wajar ===== -->
+        <section class="panel">
+            <h2>Peta harga wajar</h2>
+            <p class="sub">Beberapa metode valuasi dibandingkan dengan harga sekarang (garis putus-putus). Geser asumsi untuk melihat sensitivitasnya.</p>
+            <div class="assump">
+                <div>
+                    <label for="rSlider"><span>Biaya ekuitas (imbal hasil yang diminta investor)</span><b id="rOut">12,5%</b></label>
+                    <input type="range" id="rSlider" min="8" max="20" step="0.5" value="12.5">
+                </div>
+                <div>
+                    <label for="gSlider"><span>Pertumbuhan jangka panjang (selamanya)</span><b id="gOut">5,0%</b></label>
+                    <input type="range" id="gSlider" min="0" max="8" step="0.5" value="5">
+                </div>
+            </div>
+            <div class="chart" id="fieldChart"><p class="empty">Peta akan muncul setelah data dimuat.</p></div>
+            <p class="small muted" style="margin:10px 0 0" id="fieldNote"></p>
+        </section>
+ 
+        <div class="two">
+            <section class="panel">
+                <h2>Skenario proyeksi laba</h2>
+                <p class="sub">EPS diproyeksikan dengan tiga laju pertumbuhan, lalu dikalikan PER target.</p>
+                <div class="table-wrap" id="scenBox"><p class="empty">Menunggu data.</p></div>
+                <p class="small muted" style="margin:10px 0 0" id="scenNote"></p>
+            </section>
+            <section class="panel">
+                <h2>Apa yang sudah diperhitungkan harga?</h2>
+                <p class="sub">Dibalik: dari harga sekarang, pertumbuhan seperti apa yang diharapkan pasar.</p>
+                <div id="impliedBox"><p class="empty">Menunggu data.</p></div>
+            </section>
+        </div>
+ 
+        <section class="panel">
+            <h2>Riwayat PER dan PBV (perkiraan)</h2>
+            <p class="sub">Harga akhir tahun dibagi laba dan nilai buku per saham tiap tahun laporan. Memakai jumlah saham terbaru, jadi hasilnya perkiraan.</p>
+            <div class="table-wrap" id="histBox"><p class="empty">Menunggu data.</p></div>
+        </section>
+ 
+        <!-- ===== Harga ===== -->
+        <section class="panel">
+            <div class="head">
+                <div>
+                    <h2>Pergerakan harga</h2>
+                    <p class="sub" id="priceSub">Arahkan kursor ke grafik untuk melihat harga, rata-rata bergerak, dan volume per tanggal.</p>
+                </div>
+                <div class="seg small" id="rangeSeg" role="group" aria-label="Rentang harga">
+                    <button type="button" data-range="1mo" aria-pressed="false">1 bln</button>
+                    <button type="button" data-range="3mo" aria-pressed="false">3 bln</button>
+                    <button type="button" data-range="6mo" aria-pressed="false">6 bln</button>
+                    <button type="button" data-range="1y" aria-pressed="true">1 thn</button>
+                    <button type="button" data-range="5y" aria-pressed="false">5 thn</button>
+                </div>
+            </div>
+            <div class="toggles" id="maToggles">
+                <span class="small muted">Rata-rata bergerak:</span>
+                <button type="button" data-ma="0" aria-pressed="false"><i style="background:var(--c3)"></i>MA20</button>
+                <button type="button" data-ma="1" aria-pressed="true"><i style="background:var(--c1)"></i>MA50</button>
+                <button type="button" data-ma="2" aria-pressed="true"><i style="background:var(--c2)"></i>MA200</button>
+            </div>
+            <div class="chart" id="priceChart"><p class="empty">Grafik harga akan muncul setelah data dimuat.</p></div>
+            <h3>Statistik pergerakan</h3>
+            <div class="stats" id="techStats"><p class="empty" style="grid-column:1/-1">Menunggu data.</p></div>
+            <p class="small muted" style="margin:10px 0 0">Pada rentang 5 tahun, MA dihitung dari data mingguan yang setara 20, 50, dan 200 hari.</p>
+        </section>
+ 
+        <!-- ===== Kinerja ===== -->
+        <div class="two">
+            <section class="panel">
+                <h2>Pendapatan dan laba bersih</h2>
+                <p class="sub" id="barsUnit">Per tahun laporan</p>
+                <div class="legend" id="barsLegend"></div>
+                <div class="chart" id="barsChart"><p class="empty">Menunggu data.</p></div>
+            </section>
+            <section class="panel">
+                <h2>Profitabilitas</h2>
+                <p class="sub">Margin dan imbal hasil per tahun, dalam persen</p>
+                <div class="legend" id="profLegend"></div>
+                <div class="chart" id="profChart"><p class="empty">Menunggu data.</p></div>
+            </section>
+        </div>
+ 
+        <div class="two">
+            <section class="panel">
+                <h2>Pertumbuhan tahunan</h2>
+                <p class="sub">Perubahan dibanding tahun sebelumnya</p>
+                <div class="legend" id="growLegend"></div>
+                <div class="chart" id="growChart"><p class="empty">Menunggu data.</p></div>
+            </section>
+            <section class="panel">
+                <h2>Struktur permodalan</h2>
+                <p class="sub" id="structUnit">Liabilitas dan ekuitas</p>
+                <div class="legend" id="structLegend"></div>
+                <div class="chart" id="structChart"><p class="empty">Menunggu data.</p></div>
+            </section>
+        </div>
+ 
+        <!-- ===== Kualitas bisnis ===== -->
+        <section class="panel">
+            <h2>Kualitas bisnis</h2>
+            <p class="sub">Metrik yang jarang ada di aplikasi broker: dari mana ROE berasal, seberapa stabil labanya, dan apakah tren tahun ini membaik.</p>
+            <div class="stats" id="qualStats"><p class="empty" style="grid-column:1/-1">Menunggu data.</p></div>
+            <div class="two" style="margin-top:18px">
+                <div>
+                    <h3 style="margin-top:0">Dekomposisi ROE (DuPont)</h3>
+                    <div class="table-wrap" id="dupontBox"><p class="empty">Menunggu data.</p></div>
+                    <p class="small muted" id="dupontNote" style="margin:10px 0 0"></p>
+                </div>
+                <div>
+                    <h3 style="margin-top:0" id="pioTitle">Uji tren tahun ini</h3>
+                    <ul class="signal-list" id="pioList"><li>Menunggu data.</li></ul>
+                </div>
+            </div>
+        </section>
+ 
+        <!-- ===== Skor ===== -->
+        <section class="panel">
+            <h2>Skor kesehatan ringkas</h2>
+            <p class="sub">Gabungan beberapa rasio dari laporan terbaru. Ini alat bantu membaca, bukan rekomendasi.</p>
+            <div class="score-grid">
+                <div class="chart" id="radarBox"><p class="empty">Skor akan muncul setelah data dimuat.</p></div>
+                <div>
+                    <div class="score-top">
+                        <div class="ring" id="scoreRing"></div>
+                        <div>
+                            <div style="font-weight:600" id="scoreTitle">Belum ada skor</div>
+                            <div class="small muted" id="scoreText">Cari kode saham terlebih dahulu.</div>
+                        </div>
+                    </div>
+                    <div id="scoreBars"></div>
+                </div>
+            </div>
+        </section>
+ 
+        <!-- ===== Rasio ===== -->
+        <section class="panel">
+            <h2>Rasio keuangan</h2>
+            <p class="sub">Berdasarkan laporan tahunan terbaru. Label status memakai patokan umum, bandingkan dengan perusahaan sejenis.</p>
+            <div class="ratio-list" id="ratioList"><p class="empty">Menunggu data.</p></div>
+            <p class="small muted" style="margin:14px 0 0">
+                Catatan: DER di sini memakai total liabilitas, bukan hanya utang berbunga.
+                Rasio bank perlu dibandingkan dengan bank lain, bukan langsung dengan perusahaan nonkeuangan.
+            </p>
+        </section>
+ 
+        <!-- ===== Riwayat ===== -->
+        <section class="panel">
+            <div class="head">
+                <div>
+                    <h2>Riwayat laporan tahunan</h2>
+                    <p class="sub">Tahun terbaru di atas</p>
+                </div>
+                <button class="btn ghost" id="csvBtn" type="button" disabled>Unduh CSV</button>
+            </div>
+            <div class="table-wrap" id="historyBox"><p class="empty">Menunggu data.</p></div>
+        </section>
+ 
+        <!-- ===== Bisnis & catatan ===== -->
+        <div class="two">
+            <section class="panel">
+                <h2>Bagaimana perusahaan menghasilkan uang?</h2>
+                <p class="sub">Ringkasan otomatis dari data, lalu lengkapi dengan analisismu</p>
+                <p id="businessSummary" style="margin-top:0">Cari kode saham untuk melihat ringkasan bisnis.</p>
+                <label class="small muted" for="businessNotes">Catatan analisis saya</label>
+                <textarea id="businessNotes"
+                    placeholder="Produk utama apa, siapa pelanggannya, apa keunggulan kompetitifnya (merek, skala, distribusi)?"></textarea>
+            </section>
+            <section class="panel">
+                <h2>Catatan risiko dan peluang saya</h2>
+                <p class="sub">Faktor non-angka: persaingan, regulasi, ketergantungan, manajemen</p>
+                <textarea id="riskNotes" style="min-height:190px"
+                    placeholder="Contoh: persaingan harga, fluktuasi bahan baku, rencana ekspansi, risiko regulasi..."></textarea>
+                <p class="small muted" id="notesStatus" style="margin-bottom:0">Catatan tersimpan otomatis di browser ini, per kode saham.</p>
+            </section>
+        </div>
+ 
+        <div class="two">
+            <section class="panel">
+                <h2>Peluang</h2>
+                <p class="sub">Sinyal positif dari angka</p>
+                <ul class="signal-list good" id="opportunityList"><li>Belum ada data.</li></ul>
+            </section>
+            <section class="panel">
+                <h2>Risiko</h2>
+                <p class="sub">Sinyal waspada dari angka</p>
+                <ul class="signal-list bad" id="riskList"><li>Belum ada data.</li></ul>
+            </section>
+        </div>
+    </div>
+ 
+    <div class="note">
+        <strong>Catatan riset:</strong> angka diambil dari API pihak ketiga dan bisa terlambat atau berbeda
+        dari laporan resmi. Prediksi dan harga wajar adalah hasil model dengan asumsi sederhana; masa depan bisa
+        berbeda jauh. Verifikasi ke laporan keuangan di situs BEI atau perusahaan sebelum mengambil keputusan.
+    </div>
+</div>
+ 
+<!-- =====================================================
+     HALAMAN ABOUT
+     ===================================================== -->
+<div id="viewAbout" hidden>
+    <article class="about">
+        <h1>About Norlens</h1>
+        <p class="lead">Your Lens into the Stock Market</p>
+ 
+        <p>Norlens is a stock market information and research platform created by Noru to help people better understand the stock market, explore investment opportunities, and make more informed financial decisions.</p>
+        <p>The name Norlens represents a personal perspective on the financial world, combining Noru's identity with the idea of a lens—a tool for seeing information more clearly.</p>
+        <p>Through Norlens, users can explore stock market information, learn about companies, analyze financial performance, and understand the factors that influence stock prices.</p>
+ 
+        <h2>Our Mission</h2>
+        <p>Our mission is to make stock market information more accessible, understandable, and useful.</p>
+        <p>We aim to help users develop their financial knowledge, think critically about investment opportunities, and approach the stock market with a research-based mindset rather than relying on speculation.</p>
+ 
+        <h2>What Norlens Offers</h2>
+        <div class="offers">
+            <div class="offer">
+                <h3>1. Stock Market Information</h3>
+                <p>Access stock-related information to understand market movements, stock prices, and the latest developments affecting publicly listed companies.</p>
+            </div>
+            <div class="offer">
+                <h3>2. Company Research</h3>
+                <p>Explore companies through their business models, financial performance, competitive advantages, and potential risks to gain a better understanding of their underlying value.</p>
+            </div>
+            <div class="offer">
+                <h3>3. Financial Analysis</h3>
+                <p>Understand key financial indicators and company fundamentals that can help users evaluate business performance and financial strength.</p>
+            </div>
+            <div class="offer">
+                <h3>4. Investment Insights</h3>
+                <p>Explore factors that may influence investment opportunities, including industry trends, company developments, market conditions, and business prospects.</p>
+            </div>
+            <div class="offer">
+                <h3>5. Investment Learning</h3>
+                <p>Build a stronger foundation in investing by learning how to interpret financial information, evaluate companies, and develop a more analytical approach to decision-making.</p>
+            </div>
+        </div>
+ 
+        <h2>Our Approach</h2>
+        <p>At Norlens, we believe that understanding a business is just as important as observing its stock price. That is why we emphasize research, critical thinking, and a long-term perspective when evaluating companies.</p>
+        <p>Rather than encouraging decisions based solely on market hype or short-term price movements, Norlens aims to help users look beyond the numbers and understand the businesses behind them.</p>
+ 
+        <h2>Our Vision</h2>
+        <p>Our vision is to become a trusted learning and research platform that empowers individuals to navigate the stock market with greater knowledge, clarity, and confidence.</p>
+        <p>We believe that financial literacy is an important step toward building a more informed generation of investors and future business leaders.</p>
+ 
+        <h2>Created by Noru Raihan Ibrahimmovic</h2>
+        <p>Norlens was initiated by Noru as a personal project driven by an interest in business, financial markets, company analysis, and technology.</p>
+        <p>This project represents an ongoing journey of learning and development, combining financial knowledge with digital innovation to create a platform that makes complex information easier to explore and understand.</p>
+        <p>As Norlens continues to evolve, the goal is to expand its features, improve the user experience, and provide more useful tools for stock market research and financial education.</p>
+ 
+        <h2>Disclaimer</h2>
+        <p class="disclaimer">Norlens is intended for informational and educational purposes only. The information provided on this platform should not be considered personalized financial advice or a recommendation to buy or sell any particular stock. Stock market investments involve risks, including the potential loss of capital. Users should conduct their own research, verify information using reliable sources, and carefully consider their financial circumstances before making investment decisions.</p>
+ 
+        <p class="tagline">Norlens — See Beyond the Numbers.</p>
+    </article>
+</div>
+ 
+<footer>Norlens · See Beyond the Numbers · Proyek riset edukasi · Bukan nasihat investasi</footer>
+</main>
+ 
+<div id="tip" role="tooltip"></div>
+ 
+<script>
+const API = "http://127.0.0.1:8000";
+const $ = (id) => document.getElementById(id);
+const NA = "Tidak tersedia";
+ 
+const state = {
+    symbol: "", cur: "IDR", rows: [], prices: {}, range: "1y", scores: null, isFin: false,
+    ctx: null, tech: null, ma: [false, true, true], assump: { r: 12.5, g: 5 }
+};
+ 
+/* ============================================================
+   HELPER ANGKA
+   ============================================================ */
+const num = (v) => (v === null || v === undefined || v === "") ? NaN : Number(v);
+const fin = Number.isFinite;
+ 
+function fmtMoney(value, cur) {
+    const v = num(value);
+    if (!fin(v)) return NA;
+    const prefix = cur === "IDR" ? "Rp " : cur === "USD" ? "US$ " : cur + " ";
+    const abs = Math.abs(v);
+    const sign = v < 0 ? "-" : "";
+    for (const [size, name] of [[1e12, "triliun"], [1e9, "miliar"], [1e6, "juta"]]) {
+        if (abs >= size) {
+            return sign + prefix + (abs / size).toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " " + name;
+        }
+    }
+    return sign + prefix + abs.toLocaleString("id-ID", { maximumFractionDigits: 2 });
+}
+ 
+function fmtPrice(v, cur) {
+    if (!fin(v)) return NA;
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency", currency: cur || "IDR",
+        maximumFractionDigits: (cur || "IDR") === "IDR" ? 0 : 2
+    }).format(v);
+}
+ 
+const calcPercent = (n, d) => {
+    n = num(n); d = num(d);
+    return (fin(n) && fin(d) && d > 0) ? n / d * 100 : NaN;
+};
+const calcRatio = (n, d) => {
+    n = num(n); d = num(d);
+    return (fin(n) && fin(d) && d > 0) ? n / d : NaN;
+};
+const calcGrowth = (now, before) => {
+    now = num(now); before = num(before);
+    return (fin(now) && fin(before) && before > 0) ? (now - before) / before * 100 : NaN;
+};
+const cagr = (first, last, years) =>
+    (fin(first) && fin(last) && first > 0 && last > 0 && years >= 1) ? Math.pow(last / first, 1 / years) - 1 : NaN;
+ 
+const scl = (v, a, b) => fin(v) ? Math.max(0, Math.min(100, (v - a) / (b - a) * 100)) : NaN;
+const avgF = (...a) => { const f = a.filter(fin); return f.length ? f.reduce((x, y) => x + y, 0) / f.length : NaN; };
+const clip = (v, a, b) => Math.max(a, Math.min(b, v));
+const median = (arr) => {
+    const s = arr.filter(fin).sort((a, b) => a - b);
+    if (!s.length) return NaN;
+    const k = s.length;
+    return k % 2 ? s[(k - 1) / 2] : (s[k / 2 - 1] + s[k / 2]) / 2;
+};
+ 
+const showPercent = (v) => fin(v) ? v.toLocaleString("id-ID", { maximumFractionDigits: 2 }) + "%" : NA;
+const showRatio = (v) => fin(v) ? v.toLocaleString("id-ID", { maximumFractionDigits: 2 }) + "x" : NA;
+const showSigned = (v) => fin(v)
+    ? v.toLocaleString("id-ID", { maximumFractionDigits: 1, signDisplay: "exceptZero" }) + "%" : "-";
+const pct1 = (v) => fin(v) ? (v * 100).toLocaleString("id-ID", { maximumFractionDigits: 1 }) + "%" : "-";
+ 
+async function fetchJSON(url) {
+    const response = await fetch(url);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || result.error || "Permintaan gagal.");
+    return result;
+}
+ 
+/* ============================================================
+   TEMA TERANG / GELAP
+   ============================================================ */
+const mq = window.matchMedia("(prefers-color-scheme: dark)");
+ 
+function applyTheme(pref) {
+    const dark = pref === "dark" || (pref === "auto" && mq.matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.documentElement.dataset.pref = pref;
+    document.querySelectorAll("#themeSeg button").forEach((b) =>
+        b.setAttribute("aria-pressed", String(b.dataset.pref === pref)));
+}
+ 
+function setTheme(pref) {
+    try { localStorage.setItem("norlens-theme", pref); } catch (e) {}
+    applyTheme(pref);
+}
+ 
+document.querySelectorAll("#themeSeg button").forEach((b) =>
+    b.addEventListener("click", () => setTheme(b.dataset.pref)));
+ 
+mq.addEventListener("change", () => {
+    if (document.documentElement.dataset.pref === "auto") applyTheme("auto");
+});
+applyTheme(document.documentElement.dataset.pref || "auto");
+ 
+/* ============================================================
+   NAVIGASI (Riset / About)
+   ============================================================ */
+function showView(v) {
+    $("viewApp").hidden = v !== "app";
+    $("viewAbout").hidden = v !== "about";
+    document.querySelectorAll("#navSeg button").forEach((b) =>
+        b.setAttribute("aria-pressed", String(b.dataset.view === v)));
+    try { history.replaceState(null, "", v === "about" ? "#about" : location.pathname + location.search); } catch (e) {}
+    window.scrollTo({ top: 0 });
+    if (v === "app" && (state.rows.length || state.prices["1y"])) requestAnimationFrame(renderCharts);
+}
+document.querySelectorAll("#navSeg button").forEach((b) =>
+    b.addEventListener("click", () => showView(b.dataset.view)));
+$("brandBtn").addEventListener("click", () => showView("app"));
+if (location.hash === "#about") showView("about");
+ 
+/* ============================================================
+   TOOLTIP GLOBAL
+   ============================================================ */
+const tip = $("tip");
+ 
+function showTip(html, x, y) {
+    tip.innerHTML = html;
+    tip.style.display = "block";
+    const r = tip.getBoundingClientRect();
+    let left = x + 14, top = y + 14;
+    if (left + r.width > innerWidth - 8) left = x - r.width - 14;
+    if (top + r.height > innerHeight - 8) top = y - r.height - 14;
+    tip.style.left = Math.max(8, left) + "px";
+    tip.style.top = Math.max(8, top) + "px";
+}
+const hideTip = () => { tip.style.display = "none"; };
+ 
+document.addEventListener("pointermove", (e) => {
+    const t = e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (t) showTip(t.dataset.tip, e.clientX, e.clientY);
+    else if (!(e.target.closest && e.target.closest("[data-own-tip]"))) hideTip();
+});
+document.addEventListener("scroll", hideTip, { passive: true });
+ 
+/* ============================================================
+   UTILITAS GRAFIK
+   ============================================================ */
+const empty = (box, text) => { box.innerHTML = `<p class="empty">${text}</p>`; };
+ 
+function niceStep(raw) {
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / mag;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+}
+ 
+function niceTicks(min, max, count = 4) {
+    if (!(max > min)) max = min + 1;
+    const step = niceStep((max - min) / count);
+    const lo = Math.floor(min / step + 1e-9) * step;
+    const hi = Math.ceil(max / step - 1e-9) * step;
+    const ticks = [];
+    for (let v = lo; v <= hi + step / 2; v += step) ticks.push(Math.round(v / step) * step);
+    return { ticks, lo: ticks[0], hi: ticks[ticks.length - 1] };
+}
+ 
+function pickUnit(maxAbs) {
+    if (maxAbs >= 1e12) return { size: 1e12, label: "triliun" };
+    if (maxAbs >= 1e9) return { size: 1e9, label: "miliar" };
+    if (maxAbs >= 1e6) return { size: 1e6, label: "juta" };
+    return { size: 1, label: "" };
+}
+ 
+const tickLabel = (t) => Number(t.toFixed(2)).toLocaleString("id-ID");
+const dot = (c) => `<i class='dot' style='background:${c}'></i>`;
+ 
+function legendHTML(series) {
+    return series.map((s) => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join("");
+}
+ 
+function ringSVG(score, color) {
+    const o = Math.round(score);
+    const circ = 2 * Math.PI * 42;
+    return `
+        <svg viewBox="0 0 100 100" width="96" height="96">
+            <circle cx="50" cy="50" r="42" fill="none" stroke-width="9" style="stroke:var(--line)"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke-width="9" stroke-linecap="round"
+                stroke-dasharray="${(circ * o / 100).toFixed(1)} ${circ.toFixed(1)}"
+                transform="rotate(-90 50 50)" style="stroke:${color}"/>
+        </svg><b>${o}</b>`;
+}
+ 
+const barRows = (axes) => axes.map((a) => `
+    <div class="axis-row"><span>${a.name}</span>
+        <div class="bar"><i style="width:${a.score.toFixed(0)}%"></i></div>
+        <b>${Math.round(a.score)}</b></div>`).join("");
+ 
+const tile = (k, v, n, cls = "") =>
+    `<div class="stat"><div class="k">${k}</div><div class="v ${cls}">${v}</div><div class="n">${n || ""}</div></div>`;
+ 
+/* ---------- Grafik batang (grup atau bertumpuk) ---------- */
+function barChart(box, o) {
+    const { labels, series, stacked = false, unitSize = 1, tipFmt } = o;
+    const w = Math.max(box.clientWidth, 260), h = 270;
+    const m = { t: 12, r: 12, b: 28, l: 48 };
+    const iw = w - m.l - m.r, ih = h - m.t - m.b;
+    const V = series.map((s) => s.values.map((v) => fin(v) ? v / unitSize : NaN));
+ 
+    let lo = 0, hi = 0;
+    labels.forEach((_, i) => {
+        if (stacked) {
+            let pos = 0, neg = 0;
+            V.forEach((s) => { const v = s[i]; if (fin(v)) { if (v >= 0) pos += v; else neg += v; } });
+            hi = Math.max(hi, pos); lo = Math.min(lo, neg);
+        } else {
+            V.forEach((s) => { const v = s[i]; if (fin(v)) { hi = Math.max(hi, v); lo = Math.min(lo, v); } });
+        }
+    });
+    if (hi === 0 && lo === 0) return empty(box, "Data tidak cukup untuk grafik.");
+ 
+    const sc = niceTicks(lo, hi, 4);
+    const y = (v) => m.t + (sc.hi - v) / (sc.hi - sc.lo) * ih;
+    const gw = iw / labels.length;
+    const n = stacked ? 1 : series.length;
+    const bw = Math.min(40, (gw * 0.7) / n);
+ 
+    let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Grafik batang">`;
+    sc.ticks.forEach((t) => {
+        s += `<line class="gl" x1="${m.l}" x2="${w - m.r}" y1="${y(t)}" y2="${y(t)}"/>`;
+        s += `<text class="ax" x="${m.l - 8}" y="${y(t) + 4}" text-anchor="end">${tickLabel(t)}</text>`;
+    });
+    if (sc.lo < 0) s += `<line class="zero" x1="${m.l}" x2="${w - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+ 
+    labels.forEach((lab, i) => {
+        const cx = m.l + gw * i + gw / 2;
+        let tp = `<b>${lab}</b>`;
+ 
+        if (stacked) {
+            let posAcc = 0, negAcc = 0;
+            series.forEach((se, k) => {
+                const v = V[k][i];
+                if (!fin(v)) return;
+                let a, b;
+                if (v >= 0) { a = posAcc; b = posAcc + v; posAcc = b; }
+                else { a = negAcc; b = negAcc + v; negAcc = b; }
+                s += `<rect x="${cx - bw / 2}" y="${y(Math.max(a, b))}" width="${bw}" height="${Math.max(Math.abs(y(a) - y(b)), 1)}" rx="2" style="fill:${se.color}"/>`;
+            });
+        } else {
+            series.forEach((se, k) => {
+                const v = V[k][i];
+                if (!fin(v)) return;
+                const x = cx - (n * bw + (n - 1) * 3) / 2 + k * (bw + 3);
+                s += `<rect x="${x}" y="${y(Math.max(v, 0))}" width="${bw}" height="${Math.max(Math.abs(y(v) - y(0)), 1)}" rx="3" style="fill:${se.color}"/>`;
+            });
+        }
+ 
+        series.forEach((se) => { tp += `<br>${dot(se.color)}${se.name}: ${tipFmt(se.values[i])}`; });
+ 
+        s += `<text class="ax" x="${cx}" y="${h - 8}" text-anchor="middle">${lab}</text>`;
+        s += `<rect class="hit" x="${m.l + gw * i}" y="${m.t}" width="${gw}" height="${ih}" data-tip="${tp}"/>`;
+    });
+ 
+    box.innerHTML = s + "</svg>";
+}
+ 
+/* ---------- Grafik garis (banyak seri) ---------- */
+function lineChart(box, o) {
+    const { labels, series, tickSuffix = "", tipFmt } = o;
+    const w = Math.max(box.clientWidth, 260), h = 270;
+    const m = { t: 14, r: 16, b: 28, l: 48 };
+    const iw = w - m.l - m.r, ih = h - m.t - m.b;
+ 
+    const vals = series.flatMap((s) => s.values).filter(fin);
+    if (vals.length === 0) return empty(box, "Data tidak cukup untuk grafik.");
+ 
+    const sc = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 4);
+    const y = (v) => m.t + (sc.hi - v) / (sc.hi - sc.lo) * ih;
+    const gw = iw / labels.length;
+    const x = (i) => m.l + gw * i + gw / 2;
+ 
+    let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Grafik garis">`;
+    sc.ticks.forEach((t) => {
+        s += `<line class="gl" x1="${m.l}" x2="${w - m.r}" y1="${y(t)}" y2="${y(t)}"/>`;
+        s += `<text class="ax" x="${m.l - 8}" y="${y(t) + 4}" text-anchor="end">${tickLabel(t)}${tickSuffix}</text>`;
+    });
+    if (sc.lo < 0) s += `<line class="zero" x1="${m.l}" x2="${w - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+ 
+    series.forEach((se) => {
+        let d = "", pen = false;
+        se.values.forEach((v, i) => {
+            if (!fin(v)) { pen = false; return; }
+            d += (pen ? "L" : "M") + x(i) + "," + y(v) + " ";
+            pen = true;
+        });
+        s += `<path d="${d}" fill="none" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" style="stroke:${se.color}"/>`;
+        se.values.forEach((v, i) => {
+            if (fin(v)) s += `<circle cx="${x(i)}" cy="${y(v)}" r="3.8" stroke-width="2" style="fill:${se.color};stroke:var(--surface)"/>`;
+        });
+    });
+ 
+    labels.forEach((lab, i) => {
+        let tp = `<b>${lab}</b>`;
+        series.forEach((se) => { tp += `<br>${dot(se.color)}${se.name}: ${tipFmt(se.values[i])}`; });
+        s += `<text class="ax" x="${x(i)}" y="${h - 8}" text-anchor="middle">${lab}</text>`;
+        s += `<rect class="hit" x="${m.l + gw * i}" y="${m.t}" width="${gw}" height="${ih}" data-tip="${tp}"/>`;
+    });
+ 
+    box.innerHTML = s + "</svg>";
+}
+ 
+/* ============================================================
+   INDIKATOR TEKNIKAL
+   ============================================================ */
+function sma(vals, w) {
+    const out = new Array(vals.length).fill(NaN);
+    let s = 0;
+    for (let i = 0; i < vals.length; i++) {
+        s += vals[i];
+        if (i >= w) s -= vals[i - w];
+        if (i >= w - 1) out[i] = s / w;
+    }
+    return out;
+}
+ 
+function rsi(c, p = 14) {
+    if (c.length <= p) return NaN;
+    let g = 0, l = 0;
+    for (let i = 1; i <= p; i++) { const d = c[i] - c[i - 1]; if (d >= 0) g += d; else l -= d; }
+    g /= p; l /= p;
+    for (let i = p + 1; i < c.length; i++) {
+        const d = c[i] - c[i - 1];
+        g = (g * (p - 1) + Math.max(d, 0)) / p;
+        l = (l * (p - 1) + Math.max(-d, 0)) / p;
+    }
+    return l === 0 ? 100 : 100 - 100 / (1 + g / l);
+}
+ 
+function techStats(p1, p5) {
+    const s = p1.series, n = s.length;
+    if (n < 30) return null;
+    const c = s.map((x) => x.c);
+    const back = (k) => n > k ? calcGrowth(c[n - 1], c[n - 1 - k]) : NaN;
+ 
+    const rets = [];
+    for (let i = 1; i < n; i++) rets.push(Math.log(c[i] / c[i - 1]));
+    const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+    const sd = Math.sqrt(rets.reduce((a, b) => a + (b - mean) * (b - mean), 0) / Math.max(rets.length - 1, 1));
+ 
+    let peak = -Infinity, mdd = 0;
+    c.forEach((v) => { peak = Math.max(peak, v); mdd = Math.min(mdd, (v - peak) / peak * 100); });
+ 
+    const hi = Math.max(...c), lo = Math.min(...c), px = c[n - 1];
+    const s20 = sma(c, 20)[n - 1], s50 = sma(c, 50)[n - 1], s200 = sma(c, 200)[n - 1];
+ 
+    const vols = s.map((x) => x.v).filter(fin);
+    const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+    const volRatio = vols.length >= 60 ? avg(vols.slice(-20)) / avg(vols.slice(-60)) : NaN;
+ 
+    let ret5 = NaN, cagr5 = NaN;
+    if (p5 && p5.series.length > 20) {
+        const a = p5.series[0], b = p5.series[p5.series.length - 1];
+        const yrs = (b.t - a.t) / (365.25 * 864e5);
+        ret5 = calcGrowth(b.c, a.c);
+        cagr5 = yrs >= 1 ? cagr(a.c, b.c, yrs) * 100 : NaN;
+    }
+ 
+    let trend = "Transisi";
+    if (fin(s50) && fin(s200)) {
+        if (px > s50 && s50 > s200) trend = "Uptrend";
+        else if (px < s50 && s50 < s200) trend = "Downtrend";
+    } else if (fin(s50)) trend = px > s50 ? "Di atas MA50" : "Di bawah MA50";
+ 
+    return {
+        r1m: back(21), r3m: back(63), r6m: back(126), r1y: calcGrowth(px, c[0]), ret5, cagr5,
+        vol: sd * Math.sqrt(252) * 100, mdd, fromHigh: (px - hi) / hi * 100, fromLow: (px - lo) / lo * 100,
+        hi, lo, rsi: rsi(c), s20, s50, s200, px,
+        vs200: fin(s200) ? (px / s200 - 1) * 100 : NaN, vs50: fin(s50) ? (px / s50 - 1) * 100 : NaN,
+        volRatio, trend
+    };
+}
+ 
+function renderTech() {
+    const box = $("techStats");
+    const t = state.tech;
+    if (!t) { box.innerHTML = '<p class="empty" style="grid-column:1/-1">Riwayat harga belum cukup.</p>'; return; }
+    const cur = (state.prices["1y"] || {}).cur || state.cur;
+    const cls = (v) => fin(v) ? (v >= 0 ? "up" : "down") : "";
+ 
+    const rsiNote = !fin(t.rsi) ? "" : t.rsi >= 70 ? "Jenuh beli (di atas 70)" : t.rsi <= 30 ? "Jenuh jual (di bawah 30)" : "Zona netral (30 sampai 70)";
+    const volNote = !fin(t.volRatio) ? "Data volume tidak tersedia"
+        : t.volRatio >= 1.3 ? "Volume 20 hari terakhir jauh di atas rata-rata 3 bulan"
+        : t.volRatio <= 0.7 ? "Volume mengering dibanding 3 bulan terakhir" : "Volume 20 hari vs rata-rata 3 bulan";
+ 
+    box.innerHTML = [
+        tile("Return 1 bulan", showSigned(t.r1m), "21 hari bursa", cls(t.r1m)),
+        tile("Return 3 bulan", showSigned(t.r3m), "63 hari bursa", cls(t.r3m)),
+        tile("Return 6 bulan", showSigned(t.r6m), "126 hari bursa", cls(t.r6m)),
+        tile("Return 1 tahun", showSigned(t.r1y), "Di luar dividen", cls(t.r1y)),
+        tile("Return 5 tahun", fin(t.ret5) ? showSigned(t.ret5) : "-", fin(t.cagr5) ? "Setara " + showSigned(t.cagr5) + " per tahun" : "Data 5 tahun belum dimuat", cls(t.ret5)),
+        tile("Volatilitas tahunan", showPercent(t.vol), "Simpangan baku return harian, dianualkan"),
+        tile("Penurunan terdalam 1 thn", showSigned(t.mdd), "Dari puncak ke lembah (max drawdown)", "down"),
+        tile("Jarak dari puncak 1 thn", showSigned(t.fromHigh), "Puncak " + fmtPrice(t.hi, cur) + " · dasar " + fmtPrice(t.lo, cur), cls(t.fromHigh)),
+        tile("RSI 14 hari", fin(t.rsi) ? t.rsi.toFixed(0) : "-", rsiNote),
+        tile("Tren", t.trend, fin(t.vs200) ? "Harga " + showSigned(t.vs200) + " dari MA200" : fin(t.vs50) ? "Harga " + showSigned(t.vs50) + " dari MA50" : ""),
+        tile("MA50 vs MA200", fin(t.s50) && fin(t.s200) ? (t.s50 > t.s200 ? "Golden cross" : "Death cross") : "-", fin(t.s50) && fin(t.s200) ? "MA50 " + fmtPrice(t.s50, cur) + " · MA200 " + fmtPrice(t.s200, cur) : "Butuh 200 hari data"),
+        tile("Rasio volume", fin(t.volRatio) ? t.volRatio.toFixed(2) + "x" : "-", volNote)
+    ].join("");
+}
+ 
+/* ---------- Grafik harga (area + MA + volume + crosshair) ---------- */
+const MA_LABEL = ["MA20", "MA50", "MA200"];
+const MA_COLOR = ["var(--c3)", "var(--c1)", "var(--c2)"];
+ 
+function getPriceView() {
+    let full, windows, take;
+    if (state.range === "5y") {
+        const p = state.prices["5y"];
+        if (!p) return null;
+        full = p.series; windows = [4, 10, 40]; take = full.length;
+    } else {
+        const p = state.prices["1y"];
+        if (!p) return null;
+        full = p.series; windows = [20, 50, 200];
+        take = Math.min({ "1mo": 22, "3mo": 66, "6mo": 132, "1y": Infinity }[state.range] || Infinity, full.length);
+    }
+    const off = full.length - take;
+    const closes = full.map((d) => d.c);
+    return { data: full.slice(off), mas: windows.map((w) => sma(closes, w).slice(off)) };
+}
+ 
+function renderPrice() {
+    const box = $("priceChart");
+    const view = getPriceView();
+    if (!view || view.data.length < 2) {
+        return empty(box, "Riwayat harga belum tersedia. Pastikan server.py versi terbaru sedang berjalan.");
+    }
+    const data = view.data;
+    const cur = (state.prices["1y"] || {}).cur || state.cur;
+    const w = Math.max(box.clientWidth, 280);
+    const hasVol = data.some((d) => fin(d.v) && d.v > 0);
+    const ph = 250, vh = hasVol ? 54 : 0, gap = hasVol ? 10 : 0;
+    const m = { t: 12, r: 14, b: 28, l: 66 };
+    const h = m.t + ph + gap + vh + m.b;
+    const iw = w - m.l - m.r;
+    const n = data.length;
+ 
+    const closes = data.map((d) => d.c);
+    const shown = view.mas.map((arr, k) => state.ma[k] ? arr : null);
+    const extra = shown.filter(Boolean).flatMap((a) => a.filter(fin));
+    const mn = Math.min(...closes, ...extra), mx = Math.max(...closes, ...extra);
+    const pad = (mx - mn) * 0.06 || mx * 0.02;
+    const sc = niceTicks(mn - pad, mx + pad, 4);
+    const x = (i) => m.l + iw * i / (n - 1);
+    const y = (v) => m.t + (sc.hi - v) / (sc.hi - sc.lo) * ph;
+ 
+    const up = closes[n - 1] >= closes[0];
+    const color = up ? "var(--up)" : "var(--down)";
+    const line = data.map((d, i) => (i ? "L" : "M") + x(i).toFixed(1) + "," + y(d.c).toFixed(1)).join(" ");
+    const area = line + ` L${x(n - 1)},${m.t + ph} L${x(0)},${m.t + ph} Z`;
+ 
+    const long = state.range === "6mo" || state.range === "1y" || state.range === "5y";
+    const fmtDate = (t) => new Date(t).toLocaleDateString("id-ID",
+        long ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" });
+ 
+    let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Grafik harga saham">
+        <defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" style="stop-color:${color};stop-opacity:.28"/>
+            <stop offset="1" style="stop-color:${color};stop-opacity:0"/>
+        </linearGradient></defs>`;
+ 
+    sc.ticks.forEach((t) => {
+        s += `<line class="gl" x1="${m.l}" x2="${w - m.r}" y1="${y(t)}" y2="${y(t)}"/>`;
+        s += `<text class="ax" x="${m.l - 8}" y="${y(t) + 4}" text-anchor="end">${t.toLocaleString("id-ID", { maximumFractionDigits: sc.ticks[1] - sc.ticks[0] < 1 ? 2 : 0 })}</text>`;
+    });
+    for (let k = 0; k < 5; k++) {
+        const i = Math.round(k * (n - 1) / 4);
+        const anchor = k === 0 ? "start" : k === 4 ? "end" : "middle";
+        s += `<text class="ax" x="${x(i)}" y="${h - 8}" text-anchor="${anchor}">${fmtDate(data[i].t)}</text>`;
+    }
+ 
+    s += `<path d="${area}" fill="url(#pg)"/>`;
+    s += `<path d="${line}" fill="none" stroke-width="2" stroke-linejoin="round" style="stroke:${color}"/>`;
+ 
+    shown.forEach((arr, k) => {
+        if (!arr) return;
+        let d = "", pen = false;
+        arr.forEach((v, i) => {
+            if (!fin(v)) { pen = false; return; }
+            d += (pen ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1) + " ";
+            pen = true;
+        });
+        if (d) s += `<path d="${d}" fill="none" stroke-width="1.6" stroke-linejoin="round" style="stroke:${MA_COLOR[k]}"/>`;
+    });
+ 
+    if (hasVol) {
+        const vmax = Math.max(...data.map((d) => fin(d.v) ? d.v : 0));
+        const base = m.t + ph + gap + vh;
+        const bw = Math.max(1, Math.min(10, iw / n * 0.7));
+        data.forEach((d, i) => {
+            if (!fin(d.v) || d.v <= 0) return;
+            const bh = Math.max(1, d.v / vmax * vh);
+            const upDay = i === 0 || d.c >= data[i - 1].c;
+            s += `<rect x="${x(i) - bw / 2}" y="${base - bh}" width="${bw}" height="${bh}" style="fill:${upDay ? "var(--up)" : "var(--down)"};opacity:.45"/>`;
+        });
+        s += `<text class="ax" x="${m.l - 8}" y="${base - vh + 10}" text-anchor="end">Vol</text>`;
+    }
+ 
+    const bottom = m.t + ph + gap + vh;
+    s += `<line id="pcl" class="gl" y1="${m.t}" y2="${bottom}" style="stroke:var(--muted);stroke-dasharray:3 3;visibility:hidden"/>`;
+    s += `<circle id="pcd" r="5" stroke-width="2" style="fill:${color};stroke:var(--surface);visibility:hidden"/>`;
+    s += `<rect class="ov" data-own-tip x="${m.l}" y="${m.t}" width="${iw}" height="${bottom - m.t}" fill="transparent" style="touch-action:pan-y"/>`;
+    box.innerHTML = s + "</svg>";
+ 
+    const svg = box.querySelector("svg");
+    const cl = svg.querySelector("#pcl"), cd = svg.querySelector("#pcd");
+    const ov = svg.querySelector(".ov");
+ 
+    ov.addEventListener("pointermove", (e) => {
+        const r = svg.getBoundingClientRect();
+        const px = (e.clientX - r.left) * (w / r.width);
+        const i = Math.max(0, Math.min(n - 1, Math.round((px - m.l) / iw * (n - 1))));
+        const d = data[i];
+        cl.setAttribute("x1", x(i)); cl.setAttribute("x2", x(i));
+        cd.setAttribute("cx", x(i)); cd.setAttribute("cy", y(d.c));
+        cl.style.visibility = cd.style.visibility = "visible";
+        const chg = calcGrowth(d.c, data[0].c);
+        let html = `<b>${new Date(d.t).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</b><br>` +
+            `${fmtPrice(d.c, cur)}<br>${showSigned(chg)} dari awal periode`;
+        shown.forEach((arr, k) => { if (arr && fin(arr[i])) html += `<br>${dot(MA_COLOR[k])}${MA_LABEL[k]}: ${fmtPrice(arr[i], cur)}`; });
+        if (fin(d.v) && d.v > 0) html += `<br>Volume: ${d.v.toLocaleString("id-ID")} lembar`;
+        showTip(html, e.clientX, e.clientY);
+    });
+    ov.addEventListener("pointerleave", () => {
+        cl.style.visibility = cd.style.visibility = "hidden";
+        hideTip();
+    });
+ 
+    const total = calcGrowth(closes[n - 1], closes[0]);
+    $("priceSub").innerHTML = `Perubahan periode ini: <b style="color:var(${up ? "--up" : "--down"})">${showSigned(total)}</b> · tertinggi ${fmtPrice(Math.max(...closes), cur)} · terendah ${fmtPrice(Math.min(...closes), cur)}`;
+}
+ 
+$("maToggles").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-ma]");
+    if (!b) return;
+    const k = Number(b.dataset.ma);
+    state.ma[k] = !state.ma[k];
+    b.setAttribute("aria-pressed", String(state.ma[k]));
+    renderPrice();
+});
+ 
+/* ---------- Radar ---------- */
+function renderRadar() {
+    const box = $("radarBox");
+    const sc = state.scores;
+    if (!sc || sc.axes.length < 3) return empty(box, "Data belum cukup untuk membuat skor.");
+ 
+    const w = Math.min(Math.max(box.clientWidth, 260), 460), h = Math.round(w * 0.86);
+    const cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 44;
+    const n = sc.axes.length;
+    const pt = (i, r) => {
+        const a = -Math.PI / 2 + 2 * Math.PI * i / n;
+        return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+    };
+ 
+    let s = `<svg viewBox="0 0 ${w} ${h}" style="max-width:${w}px;margin:auto" role="img" aria-label="Grafik radar skor">`;
+    [25, 50, 75, 100].forEach((p) => {
+        s += `<polygon points="${sc.axes.map((_, i) => pt(i, R * p / 100).join(",")).join(" ")}" fill="none" class="gl"/>`;
+    });
+    sc.axes.forEach((a, i) => {
+        const [x2, y2] = pt(i, R);
+        s += `<line class="gl" x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}"/>`;
+        const [lx, ly] = pt(i, R + 18);
+        const anchor = Math.abs(lx - cx) < 6 ? "middle" : lx > cx ? "start" : "end";
+        s += `<text class="ax" style="font-size:12px" x="${lx}" y="${ly + 4}" text-anchor="${anchor}">${a.name}</text>`;
+    });
+    s += `<polygon points="${sc.axes.map((a, i) => pt(i, R * a.score / 100).join(",")).join(" ")}" stroke-width="2.2" stroke-linejoin="round" style="fill:var(--c1);fill-opacity:.2;stroke:var(--c1)"/>`;
+    sc.axes.forEach((a, i) => {
+        const [px, py] = pt(i, R * a.score / 100);
+        s += `<circle cx="${px}" cy="${py}" r="9" fill="transparent" data-tip="<b>${a.name}</b><br>Skor ${Math.round(a.score)} / 100"/>`;
+        s += `<circle cx="${px}" cy="${py}" r="4" style="fill:var(--c1);stroke:var(--surface)" stroke-width="2" pointer-events="none"/>`;
+    });
+    box.innerHTML = s + "</svg>";
+}
+ 
+function renderScorePanel() {
+    const sc = state.scores;
+    if (!sc || !fin(sc.overall)) {
+        $("scoreRing").innerHTML = "";
+        $("scoreTitle").textContent = "Skor belum tersedia";
+        $("scoreText").textContent = "Data keuangan belum cukup.";
+        $("scoreBars").innerHTML = "";
+        return;
+    }
+    const o = Math.round(sc.overall);
+    const label = o >= 70 ? "Fundamental tergolong kuat" : o >= 45 ? "Fundamental tergolong sedang" : "Fundamental tergolong lemah";
+    $("scoreRing").innerHTML = ringSVG(o, "var(--c1)");
+    $("scoreTitle").textContent = label;
+    $("scoreText").textContent = `Rata-rata ${sc.axes.length} aspek yang datanya tersedia (skala 0 sampai 100).`;
+    $("scoreBars").innerHTML = barRows(sc.axes);
+}
+ 
+function computeScores(rows, m) {
+    const last = rows[rows.length - 1], prev = rows[rows.length - 2];
+    const revG = prev ? calcGrowth(last.revenue, prev.revenue) : NaN;
+    const profG = prev ? calcGrowth(last.netIncome, prev.netIncome) : NaN;
+ 
+    const axes = [
+        { name: "Profitabilitas", score: avgF(scl(m.roe, 0, 20), scl(m.npm, 0, 20)) },
+        { name: "Efisiensi aset", score: scl(m.roa, 0, m.isFinancial ? 2.5 : 10) },
+        { name: "Pertumbuhan", score: avgF(scl(revG, -10, 20), scl(profG, -20, 30)) },
+        { name: "Solvabilitas", score: m.isFinancial ? NaN : scl(4 - m.der, 0, 4) },
+        { name: "Likuiditas", score: m.isFinancial ? NaN : scl(m.currentRatio, 0.5, 2.5) },
+        { name: "Valuasi", score: m.per > 0 ? scl(35 - m.per, 0, 27) : NaN }
+    ].filter((a) => fin(a.score));
+ 
+    return { axes, overall: avgF(...axes.map((a) => a.score)) };
+}
+ 
+/* ============================================================
+   VALUASI & PREDIKSI
+   ============================================================ */
+function ttmDividends() {
+    const p = state.prices["5y"] || state.prices["1y"];
+    if (!p || !p.divs) return NaN;
+    const lastT = p.series.length ? p.series[p.series.length - 1].t : Date.now();
+    const cutoff = lastT - 365 * 864e5;
+    return p.divs.filter((d) => d.t > cutoff).reduce((s, d) => s + d.a, 0);
+}
+ 
+function histMultiples(ctx) {
+    const p5 = state.prices["5y"];
+    if (!p5 || !(ctx.shares > 0) || !fin(ctx.fx)) return [];
+    return ctx.rows.slice(-6).map((r) => {
+        const end = new Date(r.year + "-12-31").getTime();
+        if (!p5.series.length || end < p5.series[0].t) return null;
+        let pt = null;
+        for (const d of p5.series) { if (d.t <= end) pt = d; else break; }
+        if (!pt) return null;
+        const eps = r.netIncome / ctx.shares * ctx.fx, bv = r.equity / ctx.shares * ctx.fx;
+        return { year: r.year, price: pt.c, eps, bv, per: eps > 0 ? pt.c / eps : NaN, pbv: bv > 0 ? pt.c / bv : NaN };
+    }).filter(Boolean);
+}
+ 
+function valuate(ctx, r, g) {
+    const P = ctx.price, e = ctx.epsP, bv = ctx.bvps, roe = ctx.m.roe / 100;
+    const res = { P, methods: [], scen: null, fair: NaN, upside: NaN, target12: NaN, implied: NaN, medPER: NaN, medSrc: "", gBase: NaN, payoutUsed: NaN, payoutAssumed: false };
+ 
+    // PER target dari riwayat sendiri
+    const hp = ctx.hist.map((h) => h.per).filter((v) => fin(v) && v > 0 && v < 80);
+    const med = hp.length >= 3 ? median(hp) : (ctx.m.per > 0 ? ctx.m.per : NaN);
+    res.medPER = fin(med) ? clip(med, 5, 35) : NaN;
+    res.medSrc = hp.length >= 3 ? "median PER historis" : "PER saat ini";
+ 
+    // pertumbuhan dasar: gabungan CAGR laba dan pertumbuhan berkelanjutan (ROE x retensi)
+    res.payoutAssumed = !fin(ctx.payout);
+    res.payoutUsed = res.payoutAssumed ? 0.4 : ctx.payout;
+    const gSust = roe > 0 ? roe * (1 - res.payoutUsed) : NaN;
+    res.gSust = gSust;
+    let gb = avgF(ctx.cagrNI, gSust);
+    if (!fin(gb)) gb = g;
+    res.gBase = clip(gb, -0.1, 0.25);
+ 
+    // metode harga wajar
+    if (e > 0 && fin(res.medPER)) {
+        const mid = e * res.medPER;
+        res.methods.push({ key: "per", name: "Reversi ke PER historis", low: mid * 0.8, mid, high: mid * 1.2, color: "var(--c2)", pv: true,
+            note: `${res.medPER.toFixed(1)}x (${res.medSrc}) × EPS, rentang ±20%` });
+    }
+    if (bv > 0 && roe > 0 && r > g + 0.005) {
+        const f = (rr) => bv * (roe - g) / (rr - g);
+        const mid = f(r);
+        if (mid > 0) {
+            res.methods.push({ key: "pbv", name: "PBV wajar (ROE vs biaya ekuitas)", low: Math.max(f(r + 0.01), 0), mid, high: f(Math.max(r - 0.01, g + 0.005)), color: "var(--c3)", pv: true,
+                note: `PBV wajar ${(mid / bv).toFixed(2)}x = (ROE − g) / (r − g), rentang r ±1 poin` });
+        }
+    }
+    if (e > 0 && bv > 0) {
+        const mid = Math.sqrt(22.5 * e * bv);
+        res.methods.push({ key: "gra", name: "Graham Number", low: mid, mid, high: mid, color: "var(--brand)", pv: true,
+            note: "√(22,5 × EPS × nilai buku per saham)" });
+    }
+ 
+    res.fair = median(res.methods.filter((x) => x.pv).map((x) => x.mid));
+    if (fin(res.fair) && P > 0) res.upside = res.fair / P - 1;
+ 
+    // skenario proyeksi
+    if (e > 0 && fin(res.medPER)) {
+        const mk = (name, gs, mult, cls) => {
+            const eps1 = e * (1 + gs), eps3 = e * Math.pow(1 + gs, 3);
+            const per = res.medPER * mult;
+            const p1 = eps1 * per, p3 = eps3 * per;
+            return { name, g: gs, per, p1, p3, ret1: P > 0 ? p1 / P - 1 : NaN, cagr3: P > 0 ? Math.pow(p3 / P, 1 / 3) - 1 : NaN, cls };
+        };
+        res.scen = [
+            mk("Bear", clip(res.gBase - 0.08, -0.2, 0.3), 0.8, "warn"),
+            mk("Base", res.gBase, 1, "ok"),
+            mk("Bull", clip(res.gBase + 0.06, -0.2, 0.3), 1.2, "good")
+        ];
+        res.target12 = res.scen[1].p1;
+        const pr = res.scen.map((s) => s.p1);
+        res.methods.unshift({ key: "scen", name: "Skenario 12 bulan (bear sampai bull)", low: pr[0], mid: pr[1], high: pr[2], color: "var(--c1)", pv: false,
+            note: "Target harga satu tahun ke depan, bukan nilai wajar hari ini" });
+    }
+ 
+    // pertumbuhan tersirat dari PBV
+    if (P > 0 && bv > 0 && roe > 0) {
+        const pbv = P / bv;
+        if (Math.abs(pbv - 1) > 0.03) res.implied = (r * pbv - roe) / (pbv - 1);
+    }
+    return res;
+}
+ 
+function trendScore(t) {
+    if (!t) return NaN;
+    return avgF(scl(t.r6m, -20, 30), scl(t.vs200, -15, 20),
+        fin(t.rsi) ? Math.max(0, 100 - Math.abs(t.rsi - 55) * 2.2) : NaN);
+}
+ 
+/* ---------- Peta harga wajar (football field) ---------- */
+function fieldChart(box, items, price, cur, hi52, lo52) {
+    const rows = items.concat(fin(hi52) ? [{ name: "Kisaran 1 tahun terakhir", low: lo52, mid: price, high: hi52, color: "var(--muted)", note: "Harga penutupan terendah sampai tertinggi" }] : []);
+    const w = Math.max(box.clientWidth, 300), rowH = 50;
+    const m = { t: 24, r: 14, b: 28, l: 14 };
+    const iw = w - m.l - m.r, h = m.t + rows.length * rowH + m.b;
+ 
+    const all = rows.flatMap((r) => [r.low, r.high]).concat([price]).filter(fin);
+    const mn = Math.min(...all), mx = Math.max(...all);
+    const pad = (mx - mn) * 0.06 || mx * 0.05;
+    const sc = niceTicks(Math.max(0, mn - pad), mx + pad, 4);
+    const x = (v) => m.l + (v - sc.lo) / (sc.hi - sc.lo) * iw;
+ 
+    let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Peta harga wajar">`;
+    sc.ticks.forEach((t) => {
+        s += `<line class="gl" x1="${x(t)}" x2="${x(t)}" y1="${m.t - 6}" y2="${h - m.b}"/>`;
+        s += `<text class="ax" x="${x(t)}" y="${h - 8}" text-anchor="middle">${tickLabel(t)}</text>`;
+    });
+    rows.forEach((r, i) => {
+        const y0 = m.t + i * rowH;
+        const x1 = x(r.low), x2 = Math.max(x(r.high), x1 + 4);
+        const tp = `<b>${r.name}</b><br>${fmtPrice(r.low, cur)} sampai ${fmtPrice(r.high, cur)}<br>Titik tengah: ${fmtPrice(r.mid, cur)}<br>${r.note}`;
+        s += `<text class="ax" style="font-size:12.5px;fill:var(--text)" x="${m.l}" y="${y0 + 10}">${r.name}</text>`;
+        s += `<rect x="${x1}" y="${y0 + 18}" width="${x2 - x1}" height="14" rx="4" style="fill:${r.color};opacity:${r.color === "var(--muted)" ? .35 : .85}"/>`;
+        if (r.low !== r.high && r.name.indexOf("Kisaran") !== 0) {
+            s += `<line x1="${x(r.mid)}" x2="${x(r.mid)}" y1="${y0 + 15}" y2="${y0 + 35}" stroke-width="2.5" style="stroke:var(--text)"/>`;
+        }
+        s += `<rect class="hit" x="${m.l}" y="${y0 + 2}" width="${iw}" height="${rowH - 6}" data-tip="${tp}"/>`;
+    });
+    s += `<line x1="${x(price)}" x2="${x(price)}" y1="${m.t - 8}" y2="${h - m.b}" stroke-width="1.6" style="stroke:var(--text);stroke-dasharray:4 3"/>`;
+    const pa = x(price) > w - 90 ? "end" : "start";
+    s += `<text class="ax" style="fill:var(--text);font-weight:600" x="${x(price) + (pa === "end" ? -5 : 5)}" y="${m.t - 10}" text-anchor="${pa}">Harga ${fmtPrice(price, cur)}</text>`;
+    box.innerHTML = s + "</svg>";
+}
+ 
+/* ---------- Render semua panel prediksi ---------- */
+function renderPredict() {
+    const ctx = state.ctx;
+    const placeholders = (msg) => {
+        $("predRing").innerHTML = "";
+        $("predTitle").textContent = "Belum ada prediksi";
+        $("predText").textContent = msg;
+        $("predBars").innerHTML = "";
+        $("predFacts").innerHTML = "";
+        $("predWhy").innerHTML = "<li>" + msg + "</li>";
+        $("outlookTag").className = "st na"; $("outlookTag").textContent = "Belum ada data";
+        empty($("fieldChart"), msg);
+        $("fieldNote").textContent = "";
+        $("scenBox").innerHTML = `<p class="empty">${msg}</p>`;
+        $("scenNote").textContent = "";
+        $("impliedBox").innerHTML = `<p class="empty">${msg}</p>`;
+        $("histBox").innerHTML = `<p class="empty">${msg}</p>`;
+    };
+    if (!ctx) return placeholders("Cari kode saham terlebih dahulu.");
+ 
+    const cur = ctx.priceCur;
+    const r = state.assump.r / 100, g = state.assump.g / 100;
+    $("rOut").textContent = state.assump.r.toLocaleString("id-ID", { minimumFractionDigits: 1 }) + "%";
+    $("gOut").textContent = state.assump.g.toLocaleString("id-ID", { minimumFractionDigits: 1 }) + "%";
+ 
+    const hasVal = ctx.price > 0 && fin(ctx.fx);
+    const v = hasVal ? valuate(ctx, r, g) : null;
+    const t = state.tech;
+ 
+    // ---- skor gabungan
+    const fScore = state.scores ? state.scores.overall : NaN;
+    const vScore = v && fin(v.upside) ? scl(v.upside * 100, -30, 40) : NaN;
+    const mScore = trendScore(t);
+    const parts = [["Fundamental", fScore, .4], ["Valuasi", vScore, .4], ["Momentum", mScore, .2]].filter((p) => fin(p[1]));
+    if (!parts.length) return placeholders("Data belum cukup untuk membuat prediksi.");
+    const wsum = parts.reduce((a, p) => a + p[2], 0);
+    const overall = parts.reduce((a, p) => a + p[1] * p[2], 0) / wsum;
+    const o = Math.round(overall);
+    const [cls, label] = o >= 65 ? ["good", "Outlook positif"] : o >= 45 ? ["ok", "Outlook netral"] : ["warn", "Hati-hati"];
+ 
+    $("outlookTag").className = "st " + cls;
+    $("outlookTag").textContent = label;
+    $("predRing").innerHTML = ringSVG(o, "var(--brand)");
+    $("predTitle").textContent = label;
+    $("predText").textContent = `Skor gabungan ${o}/100 dari ${parts.length} komponen yang datanya tersedia.`;
+    $("predBars").innerHTML = barRows(parts.map((p) => ({ name: p[0], score: p[1] })));
+ 
+    // ---- fakta ringkas
+    const facts = [];
+    facts.push(tile("Harga sekarang", fmtPrice(ctx.price, cur), "Penutupan terakhir"));
+    if (v) {
+        facts.push(tile("Harga wajar komposit", fmtPrice(v.fair, cur), `Median ${v.methods.filter((x) => x.pv).length} metode nilai kini`));
+        facts.push(tile("Selisih ke harga wajar", fin(v.upside) ? showSigned(v.upside * 100) : "-",
+            !fin(v.upside) ? "" : v.upside >= 0.2 ? "Diskon signifikan" : v.upside >= -0.1 ? "Mendekati wajar" : "Premi tinggi", fin(v.upside) ? (v.upside >= 0 ? "up" : "down") : ""));
+        facts.push(tile("Target 12 bulan (base)", fin(v.target12) ? fmtPrice(v.target12, cur) : "-",
+            fin(v.target12) ? showSigned((v.target12 / ctx.price - 1) * 100) + " dari harga sekarang" : "Perlu EPS positif"));
+    }
+    facts.push(tile("Dividend yield", fin(ctx.dps) ? showPercent(ctx.dps / ctx.price * 100) : "-",
+        fin(ctx.dps) && ctx.dps > 0 ? `Dividen 12 bulan ${fmtPrice(ctx.dps, cur)}` : "Tidak ada dividen terdeteksi 12 bulan terakhir"));
+    facts.push(tile("Payout ratio", fin(ctx.payout) ? showPercent(ctx.payout * 100) : "-", fin(ctx.payout) ? "Dividen / EPS" : "Tidak diketahui, model memakai asumsi 40%"));
+    $("predFacts").innerHTML = facts.join("");
+ 
+    // ---- alasan
+    const why = [];
+    if (fin(fScore)) why.push(`Fundamental: skor ${Math.round(fScore)}/100, ${fScore >= 70 ? "tergolong kuat" : fScore >= 45 ? "tergolong sedang" : "tergolong lemah"}.`);
+    if (v && fin(v.upside)) why.push(`Valuasi: harga ${fmtPrice(ctx.price, cur)} berada ${Math.abs(v.upside * 100).toFixed(0)}% ${v.upside >= 0 ? "di bawah" : "di atas"} harga wajar komposit ${fmtPrice(v.fair, cur)} (asumsi r ${state.assump.r}%, g ${state.assump.g}%).`);
+    if (v && fin(v.implied)) why.push(`Harga sekarang sudah mengandaikan pertumbuhan jangka panjang sekitar ${pct1(v.implied)} per tahun. Pertumbuhan berkelanjutan dari ROE dan retensi laba adalah ${pct1(v.gSust)}.`);
+    if (t) why.push(`Momentum: tren ${t.trend.toLowerCase()}, return 6 bulan ${showSigned(t.r6m)}${fin(t.rsi) ? ", RSI " + t.rsi.toFixed(0) : ""}.`);
+    if (v && v.scen) why.push(`Skenario 12 bulan: bear ${fmtPrice(v.scen[0].p1, cur)} sampai bull ${fmtPrice(v.scen[2].p1, cur)}. Lebarnya rentang ini menunjukkan seberapa tidak pasti proyeksinya.`);
+    $("predWhy").innerHTML = why.map((x) => `<li>${x}</li>`).join("");
+ 
+    if (!v) {
+        empty($("fieldChart"), "Harga atau kurs tidak tersedia, harga wajar tidak dihitung.");
+        $("scenBox").innerHTML = '<p class="empty">Harga atau kurs tidak tersedia.</p>';
+        $("impliedBox").innerHTML = '<p class="empty">Harga atau kurs tidak tersedia.</p>';
+        $("histBox").innerHTML = '<p class="empty">Harga atau kurs tidak tersedia.</p>';
+        return;
+    }
+ 
+    // ---- football field
+    if (!v.methods.length) {
+        empty($("fieldChart"), "Metode valuasi butuh EPS dan nilai buku positif. Perusahaan ini belum memenuhinya.");
+    } else {
+        const p1 = state.prices["1y"];
+        const cl = p1 ? p1.series.map((x) => x.c) : [];
+        fieldChart($("fieldChart"), v.methods, ctx.price, cur, cl.length ? Math.max(...cl) : NaN, cl.length ? Math.min(...cl) : NaN);
+    }
+    $("fieldNote").textContent = "Garis tebal di dalam batang adalah titik tengah. Harga wajar komposit hanya memakai metode nilai kini (bukan skenario 12 bulan). Untuk bank dan emiten keuangan, metode PBV wajar biasanya paling relevan.";
+ 
+    // ---- skenario
+    if (v.scen) {
+        $("scenBox").innerHTML = `<table><thead><tr><th>Skenario</th><th>Pert. EPS</th><th>PER target</th><th>Harga 12 bln</th><th>Potensi</th><th>Harga 3 thn</th><th>Per tahun</th></tr></thead><tbody>` +
+            v.scen.map((s) => `<tr class="${s.name === "Base" ? "hl" : ""}"><td>${s.name}</td><td>${pct1(s.g)}</td><td>${s.per.toFixed(1)}x</td><td>${fmtPrice(s.p1, cur)}</td>
+                <td class="${s.ret1 >= 0 ? "up" : "down"}">${showSigned(s.ret1 * 100)}</td><td>${fmtPrice(s.p3, cur)}</td>
+                <td class="${s.cagr3 >= 0 ? "up" : "down"}">${showSigned(s.cagr3 * 100)}</td></tr>`).join("") + "</tbody></table>";
+        $("scenNote").textContent = `Pertumbuhan base = rata-rata CAGR laba bersih (${pct1(ctx.cagrNI)}) dan pertumbuhan berkelanjutan ROE × retensi (${pct1(v.gSust)}${v.payoutAssumed ? ", payout diasumsikan 40%" : ""}). Bear = base − 8 poin dengan PER 20% lebih rendah; bull = base + 6 poin dengan PER 20% lebih tinggi. Potensi belum termasuk dividen.`;
+    } else {
+        $("scenBox").innerHTML = '<p class="empty">Skenario butuh EPS positif dan data PER.</p>';
+        $("scenNote").textContent = "";
+    }
+ 
+    // ---- ekspektasi tersirat
+    const ey = ctx.epsP > 0 ? ctx.epsP / ctx.price : NaN;
+    const imp = [];
+    if (fin(v.implied)) {
+        const bad = v.implied >= r;
+        imp.push(`<li class="${bad ? "no" : "ok"}">Dengan ROE ${showPercent(ctx.m.roe)} dan biaya ekuitas ${state.assump.r}%, PBV ${showRatio(ctx.m.pbv)} mengandaikan pertumbuhan jangka panjang <b>${pct1(v.implied)}</b> per tahun${bad ? ". Angka ini melebihi biaya ekuitas, artinya harga menuntut skenario yang sangat optimistis." : v.implied > 0.07 ? ". Cukup tinggi untuk jangka panjang, perlu keunggulan kompetitif yang kuat." : v.implied < 0.02 ? ". Rendah, pasar memberi sedikit kredit pada pertumbuhan." : ". Masih dalam batas wajar untuk ekonomi nominal."}</li>`);
+    } else if (ctx.m.roe > 0) {
+        imp.push(`<li>PBV mendekati 1x, sehingga pertumbuhan tersirat tidak bisa dihitung stabil dari rumus ini.</li>`);
+    }
+    if (fin(ey)) {
+        imp.push(`<li>Earnings yield <b>${pct1(ey)}</b> (kebalikan PER) dibanding biaya ekuitas ${state.assump.r}%. ${ey >= r ? "Imbal hasil laba sudah di atas yang diminta, laba yang sekarang saja sudah cukup." : "Sisanya harus dipenuhi dari pertumbuhan laba di masa depan."}</li>`);
+    }
+    if (fin(v.gSust)) {
+        imp.push(`<li>Kapasitas tumbuh sendiri (ROE × retensi laba): <b>${pct1(v.gSust)}</b> per tahun${v.payoutAssumed ? " (payout diasumsikan 40%)" : ""}. CAGR laba historis: <b>${pct1(ctx.cagrNI)}</b>.</li>`);
+    }
+    if (fin(ctx.m.per) && fin(v.medPER)) {
+        imp.push(`<li>PER sekarang ${showRatio(ctx.m.per)} vs ${showRatio(v.medPER)} (${v.medSrc}). ${ctx.m.per > v.medPER * 1.15 ? "Lebih mahal dari kebiasaannya sendiri." : ctx.m.per < v.medPER * 0.85 ? "Lebih murah dari kebiasaannya sendiri." : "Sekitar level biasanya."}</li>`);
+    }
+    $("impliedBox").innerHTML = imp.length ? `<ul class="signal-list neutral">${imp.join("")}</ul>` : '<p class="empty">Data belum cukup.</p>';
+ 
+    // ---- riwayat PER/PBV
+    if (ctx.hist.length) {
+        const cur2 = ctx.priceCur;
+        $("histBox").innerHTML = `<table><thead><tr><th>Tahun</th><th>Harga akhir tahun</th><th>EPS (perk.)</th><th>PER</th><th>Nilai buku/saham</th><th>PBV</th></tr></thead><tbody>` +
+            ctx.hist.map((h) => `<tr><td>${h.year}</td><td>${fmtPrice(h.price, cur2)}</td><td>${fmtPrice(h.eps, cur2)}</td><td>${showRatio(h.per)}</td><td>${fmtPrice(h.bv, cur2)}</td><td>${showRatio(h.pbv)}</td></tr>`).join("") +
+            `<tr class="hl"><td>Sekarang</td><td>${fmtPrice(ctx.price, cur2)}</td><td>${fmtPrice(ctx.epsP, cur2)}</td><td>${showRatio(ctx.m.per)}</td><td>${fmtPrice(ctx.bvps, cur2)}</td><td>${showRatio(ctx.m.pbv)}</td></tr></tbody></table>`;
+    } else {
+        $("histBox").innerHTML = '<p class="empty">Butuh data harga 5 tahun dan jumlah saham beredar.</p>';
+    }
+}
+ 
+/* ============================================================
+   KUALITAS BISNIS
+   ============================================================ */
+function renderQuality() {
+    const rows = state.rows;
+    if (!rows.length) {
+        $("qualStats").innerHTML = '<p class="empty" style="grid-column:1/-1">Menunggu data.</p>';
+        $("dupontBox").innerHTML = '<p class="empty">Menunggu data.</p>';
+        $("dupontNote").textContent = "";
+        $("pioList").innerHTML = "<li>Menunggu data.</li>";
+        return;
+    }
+    const cur = state.cur, ctx = state.ctx;
+    const w5 = rows.slice(-5), yrs = w5.length - 1;
+    const first = w5[0], last = w5[w5.length - 1];
+ 
+    // metrik lanjutan
+    const cRev = cagr(first.revenue, last.revenue, yrs), cNI = cagr(first.netIncome, last.netIncome, yrs);
+    const nis = w5.map((r) => r.netIncome).filter(fin);
+    let cv = NaN;
+    if (nis.length >= 3) {
+        const mu = nis.reduce((a, b) => a + b, 0) / nis.length;
+        if (mu > 0) cv = Math.sqrt(nis.reduce((a, b) => a + (b - mu) * (b - mu), 0) / nis.length) / mu * 100;
+    }
+    const dol = [];
+    for (let i = 1; i < w5.length; i++) {
+        const rg = calcGrowth(w5[i].revenue, w5[i - 1].revenue), pg = calcGrowth(w5[i].netIncome, w5[i - 1].netIncome);
+        if (fin(rg) && fin(pg) && Math.abs(rg) >= 1) dol.push(pg / rg);
+    }
+    const dolAvg = dol.length ? median(dol) : NaN;
+    const marginDelta = (fin(calcPercent(last.netIncome, last.revenue)) && fin(calcPercent(first.netIncome, first.revenue)))
+        ? calcPercent(last.netIncome, last.revenue) - calcPercent(first.netIncome, first.revenue) : NaN;
+ 
+    const cls = (v) => fin(v) ? (v >= 0 ? "up" : "down") : "";
+    $("qualStats").innerHTML = [
+        tile("CAGR pendapatan", fin(cRev) ? pct1(cRev) : "-", `${yrs} tahun, ${first.year} sampai ${last.year}`, cls(cRev)),
+        tile("CAGR laba bersih", fin(cNI) ? pct1(cNI) : "-", `${yrs} tahun, ${first.year} sampai ${last.year}`, cls(cNI)),
+        tile("Stabilitas laba", fin(cv) ? cv.toFixed(0) + "%" : "-", fin(cv) ? (cv < 15 ? "Stabil (variasi rendah)" : cv < 35 ? "Cukup stabil" : "Bergejolak") + " · koefisien variasi" : "Butuh minimal 3 tahun laba positif"),
+        tile("Sensitivitas laba", fin(dolAvg) ? dolAvg.toFixed(1) + "x" : "-", fin(dolAvg) ? "Median: laba bergerak " + dolAvg.toFixed(1) + "x pendapatan" : "Pendapatan terlalu stabil untuk dihitung"),
+        tile("Perubahan margin", fin(marginDelta) ? (marginDelta >= 0 ? "+" : "") + marginDelta.toFixed(1).replace(".", ",") + " poin" : "-", `Margin laba bersih ${first.year} ke ${last.year}`, cls(marginDelta)),
+        tile("Pertumbuhan berkelanjutan", ctx && fin(ctx.sgr) ? pct1(ctx.sgr) : "-", ctx ? "ROE × (1 − payout)" + (ctx.payoutAssumed ? ", payout asumsi 40%" : "") : ""),
+        tile("Earnings yield", ctx && ctx.epsP > 0 && ctx.price > 0 ? pct1(ctx.epsP / ctx.price) : "-", "EPS / harga"),
+        tile("Pengali ekuitas", fin(calcRatio(last.assets, last.equity)) ? showRatio(calcRatio(last.assets, last.equity)) : "-", "Total aset / ekuitas, ukuran leverage")
+    ].join("");
+ 
+    // DuPont
+    const dp = w5.map((r) => ({
+        year: r.year, npm: calcRatio(r.netIncome, r.revenue), ato: calcRatio(r.revenue, r.assets),
+        em: calcRatio(r.assets, r.equity), roe: calcPercent(r.netIncome, r.equity)
+    }));
+    $("dupontBox").innerHTML = `<table><thead><tr><th>Tahun</th><th>Margin</th><th>Perputaran aset</th><th>Pengali ekuitas</th><th>ROE</th></tr></thead><tbody>` +
+        dp.slice().reverse().map((d) => `<tr><td>${d.year}</td><td>${fin(d.npm) ? showPercent(d.npm * 100) : "-"}</td><td>${showRatio(d.ato)}</td><td>${showRatio(d.em)}</td><td>${showPercent(d.roe)}</td></tr>`).join("") + "</tbody></table>";
+ 
+    let note = "ROE = margin × perputaran aset × pengali ekuitas.";
+    if (dp.length >= 2) {
+        const a = dp[dp.length - 2], b = dp[dp.length - 1];
+        if ([a.npm, a.ato, a.em, b.npm, b.ato, b.em].every((x) => fin(x) && x > 0)) {
+            const d = [["margin laba", Math.log(b.npm / a.npm)], ["efisiensi aset", Math.log(b.ato / a.ato)], ["leverage", Math.log(b.em / a.em)]];
+            const top = d.slice().sort((p, q) => Math.abs(q[1]) - Math.abs(p[1]))[0];
+            const dR = b.roe - a.roe;
+            note += ` Dari ${a.year} ke ${b.year}, ROE ${dR >= 0 ? "naik" : "turun"} ${Math.abs(dR).toFixed(1).replace(".", ",")} poin, terutama karena ${top[0]}${top[0] === "leverage" && top[1] > 0 ? " (ROE naik karena lebih berutang, bukan karena lebih efisien)" : ""}.`;
+        }
+    }
+    $("dupontNote").textContent = note;
+ 
+    // uji tren (mirip Piotroski, 6 uji)
+    const items = [];
+    if (rows.length >= 2) {
+        const b = rows[rows.length - 1], a = rows[rows.length - 2];
+        const tests = [
+            ["Laba bersih positif", b.netIncome > 0],
+            ["ROA naik dibanding tahun lalu", calcPercent(b.netIncome, b.assets) > calcPercent(a.netIncome, a.assets)],
+            ["Margin laba bersih naik", calcPercent(b.netIncome, b.revenue) > calcPercent(a.netIncome, a.revenue)],
+            ["Perputaran aset naik", calcRatio(b.revenue, b.assets) > calcRatio(a.revenue, a.assets)],
+            ["Leverage turun (liabilitas / aset)", calcRatio(b.liabilities, b.assets) < calcRatio(a.liabilities, a.assets)],
+            ["Pendapatan tumbuh", b.revenue > a.revenue]
+        ];
+        const valid = tests.filter((t) => fin(t[1] === true ? 1 : 0));
+        const pass = valid.filter((t) => t[1]).length;
+        $("pioTitle").textContent = `Uji tren tahun ${b.year}: ${pass} dari ${valid.length} lulus`;
+        $("pioList").innerHTML = tests.map((t) => `<li class="${t[1] ? "ok" : "no"}">${t[1] ? "Lulus" : "Tidak lulus"}: ${t[0]}</li>`).join("") +
+            `<li style="background:none;border-left-color:transparent;padding-left:0" class="small muted">Dimodifikasi dari F-Score Piotroski. Uji arus kas dan penerbitan saham baru tidak ikut karena data tidak tersedia.</li>`;
+    } else {
+        $("pioTitle").textContent = "Uji tren tahun ini";
+        $("pioList").innerHTML = "<li>Butuh minimal dua tahun laporan.</li>";
+    }
+}
+ 
+/* ============================================================
+   RENDER GRAFIK KEUANGAN
+   ============================================================ */
+function renderCharts() {
+    renderPrice();
+    renderTech();
+    renderRadar();
+    renderPredict();
+    renderQuality();
+ 
+    const rows = state.rows;
+    if (!rows.length) return;
+    const cur = state.cur;
+    const last5 = rows.slice(-5);
+    const labels = last5.map((r) => r.year);
+    const moneyTip = (v) => fmtMoney(v, cur);
+ 
+    // 1. Pendapatan & laba
+    const bars = [
+        { name: "Pendapatan", color: "var(--c1)", values: last5.map((r) => r.revenue) },
+        { name: "Laba bersih", color: "var(--c2)", values: last5.map((r) => r.netIncome) }
+    ];
+    const maxAbs = Math.max(0, ...bars.flatMap((s) => s.values).filter(fin).map(Math.abs));
+    const unit = pickUnit(maxAbs);
+    $("barsUnit").textContent = "Dalam " + (unit.label ? unit.label + " " : "") + cur;
+    $("barsLegend").innerHTML = legendHTML(bars);
+    barChart($("barsChart"), { labels, series: bars, unitSize: unit.size, tipFmt: moneyTip });
+ 
+    // 2. Profitabilitas
+    const prof = [
+        { name: "Margin laba bersih", color: "var(--c1)", values: last5.map((r) => calcPercent(r.netIncome, r.revenue)) },
+        { name: "ROE", color: "var(--c2)", values: last5.map((r) => calcPercent(r.netIncome, r.equity)) },
+        { name: "ROA", color: "var(--c3)", values: last5.map((r) => calcPercent(r.netIncome, r.assets)) }
+    ];
+    $("profLegend").innerHTML = legendHTML(prof);
+    lineChart($("profChart"), { labels, series: prof, tickSuffix: "%", tipFmt: showPercent });
+ 
+    // 3. Pertumbuhan
+    const gr = rows.slice(-6);
+    if (gr.length < 2) {
+        $("growLegend").innerHTML = "";
+        empty($("growChart"), "Butuh minimal dua tahun laporan untuk menghitung pertumbuhan.");
+    } else {
+        const gl = gr.slice(1).map((r) => r.year);
+        const gs = [
+            { name: "Pendapatan", color: "var(--c1)", values: gr.slice(1).map((r, i) => calcGrowth(r.revenue, gr[i].revenue)) },
+            { name: "Laba bersih", color: "var(--c3)", values: gr.slice(1).map((r, i) => calcGrowth(r.netIncome, gr[i].netIncome)) }
+        ];
+        $("growLegend").innerHTML = legendHTML(gs);
+        lineChart($("growChart"), { labels: gl, series: gs, tickSuffix: "%", tipFmt: showSigned });
+    }
+ 
+    // 4. Struktur permodalan
+    const struct = [
+        { name: "Liabilitas", color: "var(--c3)", values: last5.map((r) => r.liabilities) },
+        { name: "Ekuitas", color: "var(--c2)", values: last5.map((r) => r.equity) }
+    ];
+    const sMax = Math.max(0, ...last5.map((r) => (r.liabilities || 0) + (r.equity || 0)));
+    if (sMax <= 0) {
+        $("structLegend").innerHTML = "";
+        empty($("structChart"), "Data neraca tidak tersedia.");
+    } else {
+        const su = pickUnit(sMax);
+        $("structUnit").textContent = "Liabilitas + ekuitas, dalam " + (su.label ? su.label + " " : "") + cur;
+        $("structLegend").innerHTML = legendHTML(struct);
+        barChart($("structChart"), { labels, series: struct, stacked: true, unitSize: su.size, tipFmt: moneyTip });
+    }
+}
+ 
+let resizeTimer;
+window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if ((state.rows.length || state.prices["1y"]) && !$("viewApp").hidden) renderCharts();
+    }, 150);
+});
+ 
+/* ---------- Slider asumsi ---------- */
+$("rSlider").addEventListener("input", (e) => { state.assump.r = Number(e.target.value); renderPredict(); });
+$("gSlider").addEventListener("input", (e) => { state.assump.g = Number(e.target.value); renderPredict(); });
+ 
+/* ============================================================
+   RASIO, TABEL, SINYAL
+   ============================================================ */
+function rate(key, m) {
+    const v = m[key];
+    if (!fin(v)) return ["na", "-"];
+    const fn = m.isFinancial;
+    const band = (good, ok, higher = true, labels = ["Kuat", "Cukup", "Waspada"]) => {
+        const g = higher ? v >= good : v <= good;
+        const o = higher ? v >= ok : v <= ok;
+        return g ? ["good", labels[0]] : o ? ["ok", labels[1]] : ["warn", labels[2]];
+    };
+    switch (key) {
+        case "roe": return band(15, 8);
+        case "roa": return fn ? band(1.5, 0.8) : band(5, 2);
+        case "npm": return band(10, 5);
+        case "der": return fn ? ["na", "Bandingkan"] : band(1, 2, false, ["Ringan", "Sedang", "Tinggi"]);
+        case "currentRatio": return fn ? ["na", "Tidak relevan"] : band(1.5, 1);
+        case "eps": return v > 0 ? ["good", "Positif"] : ["warn", "Negatif"];
+        case "per": return v <= 0 ? ["warn", "Rugi"] : band(15, 25, false, ["Murah", "Wajar", "Mahal"]);
+        case "pbv": return band(1.5, 3, false, ["Murah", "Wajar", "Mahal"]);
+    }
+    return ["na", "-"];
+}
+ 
+function renderRatios(m, finCur) {
+    const items = [
+        ["roe", "ROE", "Laba bersih / Ekuitas", showPercent(m.roe)],
+        ["roa", "ROA", "Laba bersih / Total aset", showPercent(m.roa)],
+        ["npm", "Net Profit Margin", "Laba bersih / Pendapatan", showPercent(m.npm)],
+        ["der", "Debt-to-Equity (DER)", "Total liabilitas / Ekuitas", showRatio(m.der)],
+        ["currentRatio", "Current Ratio", "Aset lancar / Liabilitas lancar", m.isFinancial ? "Tidak relevan" : showRatio(m.currentRatio)],
+        ["eps", "EPS", state.epsSource, fin(m.eps) && m.eps > 0
+            ? m.eps.toLocaleString("id-ID", { maximumFractionDigits: 6 }) + " " + finCur : NA],
+        ["per", "PER", "Harga saham / EPS", showRatio(m.per)],
+        ["pbv", "PBV", "Harga saham / Nilai buku per saham", showRatio(m.pbv)]
+    ];
+    $("ratioList").innerHTML = items.map(([key, name, formula, value]) => {
+        const [cls, text] = rate(key, m);
+        return `<div class="ratio">
+            <span class="n">${name}</span>
+            <span class="val">${value}</span>
+            <span class="f">${formula}</span>
+            <span class="st ${cls}">${text}</span>
+        </div>`;
+    }).join("");
+}
+ 
+function growthCell(v) {
+    if (!fin(v)) return "<td>-</td>";
+    return `<td class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "▲" : "▼"} ${Math.abs(v).toLocaleString("id-ID", { maximumFractionDigits: 1 })}%</td>`;
+}
+ 
+function renderHistory(rows, cur) {
+    let html = `<table><thead><tr>
+        <th>Tahun</th><th>Pendapatan</th><th>Growth</th><th>Laba bersih</th><th>Growth</th>
+        <th>NPM</th><th>Total aset</th><th>Liabilitas</th><th>Ekuitas</th>
+    </tr></thead><tbody>`;
+    for (let i = rows.length - 1; i >= 0; i--) {
+        const r = rows[i], p = rows[i - 1];
+        html += `<tr>
+            <td>${r.year}</td>
+            <td>${fmtMoney(r.revenue, cur)}</td>${growthCell(p ? calcGrowth(r.revenue, p.revenue) : NaN)}
+            <td>${fmtMoney(r.netIncome, cur)}</td>${growthCell(p ? calcGrowth(r.netIncome, p.netIncome) : NaN)}
+            <td>${showPercent(calcPercent(r.netIncome, r.revenue))}</td>
+            <td>${fmtMoney(r.assets, cur)}</td><td>${fmtMoney(r.liabilities, cur)}</td><td>${fmtMoney(r.equity, cur)}</td>
+        </tr>`;
+    }
+    $("historyBox").innerHTML = html + "</tbody></table>";
+}
+ 
+function buildSignals(rows, m) {
+    const good = [], bad = [];
+    const last = rows[rows.length - 1], prev = rows[rows.length - 2];
+ 
+    if (prev) {
+        const revG = calcGrowth(last.revenue, prev.revenue);
+        const profG = calcGrowth(last.netIncome, prev.netIncome);
+        if (fin(revG)) {
+            if (revG > 5) good.push(`Pendapatan naik ${revG.toFixed(1)}% dibanding tahun sebelumnya.`);
+            else if (revG < 0) bad.push(`Pendapatan turun ${Math.abs(revG).toFixed(1)}% dibanding tahun sebelumnya.`);
+        }
+        if (fin(profG)) {
+            if (profG > 5) good.push(`Laba bersih naik ${profG.toFixed(1)}% dibanding tahun sebelumnya.`);
+            else if (profG < 0) bad.push(`Laba bersih turun ${Math.abs(profG).toFixed(1)}% dibanding tahun sebelumnya.`);
+        }
+    }
+ 
+    const profits = rows.map((r) => r.netIncome).filter(fin);
+    if (profits.length >= 3) {
+        if (profits.every((p) => p > 0)) good.push(`Laba bersih positif selama ${profits.length} tahun laporan yang tersedia.`);
+        if (profits.some((p) => p <= 0)) bad.push("Pernah mencatat laba bersih nol atau negatif dalam periode yang tersedia.");
+    }
+    if (fin(m.roe)) {
+        if (m.roe >= 15) good.push(`ROE ${m.roe.toFixed(1)}%: modal pemegang saham dikelola cukup efisien.`);
+        else if (m.roe < 5) bad.push(`ROE hanya ${m.roe.toFixed(1)}%: imbal hasil atas modal tergolong rendah.`);
+    }
+    if (fin(m.npm)) {
+        if (m.npm >= 15) good.push(`Margin laba bersih ${m.npm.toFixed(1)}%: margin tergolong tebal.`);
+        else if (m.npm < 3) bad.push(`Margin laba bersih tipis (${m.npm.toFixed(1)}%): rentan terhadap kenaikan biaya.`);
+    }
+    if (!m.isFinancial) {
+        if (fin(m.der)) {
+            if (m.der < 1) good.push(`DER ${m.der.toFixed(2)}x: struktur utang relatif ringan.`);
+            else if (m.der > 2) bad.push(`DER ${m.der.toFixed(2)}x: liabilitas jauh lebih besar dari ekuitas.`);
+        }
+        if (fin(m.currentRatio)) {
+            if (m.currentRatio >= 1.5) good.push(`Current ratio ${m.currentRatio.toFixed(2)}x: kewajiban jangka pendek tertutup dengan baik.`);
+            else if (m.currentRatio < 1) bad.push(`Current ratio ${m.currentRatio.toFixed(2)}x: aset lancar lebih kecil dari liabilitas lancar.`);
+        }
+    }
+    if (fin(m.per)) {
+        if (m.per > 25) bad.push(`PER ${m.per.toFixed(1)}x tergolong tinggi: ekspektasi pertumbuhan sudah tercermin di harga.`);
+        else if (m.per > 0 && m.per < 10) good.push(`PER ${m.per.toFixed(1)}x tergolong rendah: cek apakah murah karena fundamental atau karena risiko.`);
+    }
+ 
+    if (!good.length) good.push("Belum ada sinyal positif yang menonjol dari angka yang tersedia.");
+    if (!bad.length) bad.push("Belum ada sinyal waspada yang menonjol dari angka yang tersedia.");
+    $("opportunityList").innerHTML = good.map((t) => `<li>${t}</li>`).join("");
+    $("riskList").innerHTML = bad.map((t) => `<li>${t}</li>`).join("");
+}
+ 
+/* ============================================================
+   CATATAN (localStorage) & CSV
+   ============================================================ */
+let currentSymbol = "";
+ 
+function loadNotes(symbol) {
+    currentSymbol = symbol;
+    try {
+        $("businessNotes").value = localStorage.getItem("norlens-biz-" + symbol) || localStorage.getItem("eqlens-biz-" + symbol) || "";
+        $("riskNotes").value = localStorage.getItem("norlens-risk-" + symbol) || localStorage.getItem("eqlens-risk-" + symbol) || "";
+    } catch (e) {
+        $("notesStatus").textContent = "Penyimpanan browser tidak tersedia; catatan tidak akan tersimpan.";
+    }
+}
+function saveNotes() {
+    if (!currentSymbol) return;
+    try {
+        localStorage.setItem("norlens-biz-" + currentSymbol, $("businessNotes").value);
+        localStorage.setItem("norlens-risk-" + currentSymbol, $("riskNotes").value);
+        $("notesStatus").textContent = "Tersimpan untuk " + currentSymbol + ".";
+    } catch (e) {
+        $("notesStatus").textContent = "Gagal menyimpan catatan.";
+    }
+}
+$("businessNotes").addEventListener("input", saveNotes);
+$("riskNotes").addEventListener("input", saveNotes);
+ 
+$("csvBtn").addEventListener("click", () => {
+    if (!state.rows.length) return;
+    const head = ["tahun", "pendapatan", "laba_bersih", "total_aset", "liabilitas", "ekuitas"];
+    const lines = [head.join(",")].concat(state.rows.map((r) =>
+        [r.year, r.revenue, r.netIncome, r.assets, r.liabilities, r.equity]
+            .map((v) => fin(v) ? v : "").join(",")));
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = state.symbol + "-laporan-tahunan.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+});
+ 
+/* ============================================================
+   HARGA & KURS
+   ============================================================ */
+async function loadPrice(symbol, range) {
+    const result = await fetchJSON(API + "/api/price?symbol=" + encodeURIComponent(symbol) + "&range=" + range);
+    const d = result.chart && result.chart.result && result.chart.result[0];
+    if (!d) throw new Error("Data harga saham tidak tersedia.");
+ 
+    const q = (d.indicators && d.indicators.quote && d.indicators.quote[0]) || {};
+    const ts = d.timestamp || [];
+    const cl = q.close || [], vo = q.volume || [];
+    const series = [];
+    ts.forEach((t, i) => { const c = num(cl[i]); if (fin(c)) series.push({ t: t * 1000, c, v: num(vo[i]) }); });
+ 
+    const divs = [];
+    const dv = d.events && d.events.dividends;
+    if (dv) Object.keys(dv).forEach((k) => {
+        const a = num(dv[k].amount), t = num(dv[k].date);
+        if (fin(a) && fin(t)) divs.push({ t: t * 1000, a });
+    });
+    divs.sort((a, b) => a.t - b.t);
+ 
+    const meta = d.meta || {};
+    const price = fin(num(meta.regularMarketPrice)) ? num(meta.regularMarketPrice)
+        : (series.length ? series[series.length - 1].c : NaN);
+ 
+    return {
+        series, price, divs,
+        cur: (meta.currency || "IDR").toUpperCase(),
+        label: meta.symbol || symbol + ".JK"
+    };
+}
+ 
+async function toPriceCurrency(amount, fromCur, toCur) {
+    if (!fin(amount)) return { value: NaN, note: "" };
+    if (fromCur === toCur) return { value: amount, note: "" };
+    if (fromCur === "USD" && toCur === "IDR") {
+        try {
+            const fx = await fetchJSON(API + "/api/exchange-rate");
+            const rate = num(fx.rate);
+            if (fin(rate) && rate > 0) {
+                return {
+                    value: amount * rate,
+                    note: "Kurs " + fx.date + ": 1 USD = " + new Intl.NumberFormat("id-ID").format(rate) + " IDR"
+                };
+            }
+        } catch (e) { console.error("Gagal mengambil kurs:", e); }
+    }
+    return { value: NaN, note: "" };
+}
+ 
+function renderHero() {
+    const p = state.prices["1y"];
+    if (!p) return;
+    const s = p.series;
+ 
+    $("stockPrice").textContent = fmtPrice(p.price, p.cur);
+    $("priceUpdated").textContent = "Sumber: Yahoo Finance · " + p.label;
+ 
+    const ch = $("priceChange");
+    if (s.length >= 2) {
+        const prev = s[s.length - 2].c, now = fin(p.price) ? p.price : s[s.length - 1].c;
+        const diff = now - prev, pct = calcGrowth(now, prev);
+        ch.hidden = false;
+        ch.className = "change " + (diff >= 0 ? "up" : "down");
+        ch.textContent = (diff >= 0 ? "▲ " : "▼ ") +
+            Math.abs(diff).toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " (" + showSigned(pct) + ") hari ini";
+    } else {
+        ch.hidden = true;
+    }
+ 
+    if (s.length >= 20 && fin(p.price)) {
+        const lows = s.map((x) => x.c);
+        const lo = Math.min(...lows), hi = Math.max(...lows);
+        const pos = hi > lo ? Math.max(0, Math.min(100, (p.price - lo) / (hi - lo) * 100)) : 50;
+        $("rangeBox").innerHTML = `
+            <div class="rangebar"><span>${fmtPrice(lo, p.cur)}</span>
+                <div class="track"><i style="left:${pos}%"></i></div>
+                <span>${fmtPrice(hi, p.cur)}</span></div>
+            <p class="muted small" style="margin:6px 0 0">Kisaran 1 tahun terakhir (penutupan harian)</p>`;
+    } else {
+        $("rangeBox").innerHTML = "";
+    }
+}
+ 
+/* ---------- Pilihan rentang harga ---------- */
+$("rangeSeg").addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-range]");
+    if (!b || !state.symbol) return;
+ 
+    state.range = b.dataset.range;
+    document.querySelectorAll("#rangeSeg button").forEach((x) =>
+        x.setAttribute("aria-pressed", String(x === b)));
+ 
+    if (state.range === "5y" && !state.prices["5y"]) {
+        $("priceChart").innerHTML = '<p class="empty">Memuat data 5 tahun...</p>';
+        try { state.prices["5y"] = await loadPrice(state.symbol, "5y"); }
+        catch (err) { return empty($("priceChart"), "Data 5 tahun gagal dimuat: " + err.message); }
+    }
+    renderPrice();
+});
+ 
+/* ============================================================
+   PROSES UTAMA
+   ============================================================ */
+function resetUI() {
+    ["stockPrice", "revenue", "profit", "kRoe", "kEps", "kPer", "kPbv"].forEach((id) => $(id).textContent = "-");
+    ["revenueD", "profitD"].forEach((id) => { $(id).textContent = "\u00a0"; $(id).className = "d"; });
+    $("priceChange").hidden = true;
+    $("rangeBox").innerHTML = "";
+    $("priceUpdated").textContent = "Harga belum dimuat.";
+    $("companyTags").innerHTML = "";
+    $("businessSummary").textContent = "Memuat data bisnis...";
+    $("ratioList").innerHTML = '<p class="empty">Memuat...</p>';
+    $("historyBox").innerHTML = '<p class="empty">Memuat...</p>';
+    $("opportunityList").innerHTML = "<li>Memuat...</li>";
+    $("riskList").innerHTML = "<li>Memuat...</li>";
+    $("csvBtn").disabled = true;
+    state.rows = []; state.prices = {}; state.scores = null; state.range = "1y"; state.ctx = null; state.tech = null;
+    document.querySelectorAll("#rangeSeg button").forEach((x) =>
+        x.setAttribute("aria-pressed", String(x.dataset.range === "1y")));
+    ["priceChart", "barsChart", "profChart", "growChart", "structChart", "radarBox"]
+        .forEach((id) => empty($(id), "Memuat..."));
+    $("techStats").innerHTML = '<p class="empty" style="grid-column:1/-1">Memuat...</p>';
+    renderScorePanel();
+    renderPredict();
+    renderQuality();
+}
+ 
+function setDelta(id, v) {
+    const el = $(id);
+    if (!fin(v)) { el.textContent = "\u00a0"; el.className = "d"; return; }
+    el.className = "d " + (v >= 0 ? "up" : "down");
+    el.textContent = (v >= 0 ? "▲ " : "▼ ") + Math.abs(v).toLocaleString("id-ID", { maximumFractionDigits: 1 }) + "% vs tahun lalu";
+}
+ 
+async function loadStock(symbol) {
+    showView("app");
+    resetUI();
+    state.symbol = symbol;
+    loadNotes(symbol);
+    document.body.classList.add("loading");
+    $("searchButton").disabled = true;
+    $("searchMessage").className = "status";
+    $("searchMessage").textContent = "Mengambil data " + symbol + "...";
+    $("heroTicker").textContent = symbol;
+    $("companyName").textContent = "Memuat profil perusahaan...";
+ 
+    try {
+        // 1. Profil
+        const profileResult = await fetchJSON(API + "/api/profile?symbol=" + encodeURIComponent(symbol));
+        if (!profileResult.data) throw new Error("Profil perusahaan tidak ditemukan.");
+        const profile = profileResult.data;
+ 
+        $("companyName").textContent = profile.name || profile.symbol || symbol;
+        $("companyDescription").textContent = profile.summary ||
+            ("Sektor: " + (profile.sector || "Belum tersedia") + ". Industri: " + (profile.industry || "Belum tersedia") + ".");
+        $("companyDescription").classList.add("clamp");
+        $("descToggle").textContent = "Selengkapnya";
+        requestAnimationFrame(() => {
+            const d = $("companyDescription");
+            $("descToggle").hidden = d.scrollHeight <= d.clientHeight + 2;
+        });
+        $("companyTags").innerHTML = [profile.sector, profile.industry]
+            .filter(Boolean).map((t) => `<span class="tag">${t}</span>`).join("");
+ 
+        // 2. Keuangan
+        const fn = await fetchJSON(API + "/api/financials?symbol=" + encodeURIComponent(symbol) + "&period=annual");
+        if (!fn.data) throw new Error("Data keuangan tidak ditemukan.");
+        const periods = fn.data.periods;
+        if (!Array.isArray(periods) || !periods.length) throw new Error("Riwayat keuangan tidak tersedia.");
+ 
+        console.log("Data financial lengkap:", fn.data);
+ 
+        const finCur = (fn.data.currency || "IDR").toUpperCase();
+        state.cur = finCur;
+        const rows = periods.map((p) => ({
+            year: (p.end_date || "").substring(0, 4),
+            revenue: num(p.income && p.income.total_revenue),
+            netIncome: num(p.income && p.income.net_income),
+            assets: num(p.balance && p.balance.total_assets),
+            liabilities: num(p.balance && p.balance.total_liabilities),
+            equity: num(p.balance && p.balance.stockholders_equity)
+        }));
+        state.rows = rows;
+ 
+        const latest = periods[periods.length - 1];
+        const income = latest.income || {}, balance = latest.balance || {};
+        const last = rows[rows.length - 1], prev = rows[rows.length - 2];
+        const shares = num(balance.shares_outstanding);
+ 
+        // 3. Harga 1 tahun dan 5 tahun sekaligus (tidak fatal)
+        let price = NaN, priceCur = "IDR";
+        const [p1, p5] = await Promise.allSettled([loadPrice(symbol, "1y"), loadPrice(symbol, "5y")]);
+        if (p5.status === "fulfilled") state.prices["5y"] = p5.value;
+        if (p1.status === "fulfilled") {
+            state.prices["1y"] = p1.value;
+            price = p1.value.price;
+            priceCur = p1.value.cur;
+            state.tech = techStats(p1.value, state.prices["5y"]);
+            renderHero();
+        } else {
+            console.error(p1.reason);
+            $("stockPrice").textContent = NA;
+            $("priceUpdated").textContent = "Harga gagal dimuat (PER dan PBV tidak dihitung).";
+        }
+ 
+        // 4. Rasio
+        const m = {
+            roe: calcPercent(last.netIncome, last.equity),
+            roa: calcPercent(last.netIncome, last.assets),
+            npm: calcPercent(last.netIncome, last.revenue),
+            der: calcRatio(last.liabilities, last.equity),
+            currentRatio: calcRatio(balance.current_assets, balance.current_liabilities),
+            eps: num(income.eps_basic), per: NaN, pbv: NaN,
+            isFinancial: /financ|bank|insur/i.test((profile.sector || "") + " " + (profile.industry || ""))
+        };
+        state.isFin = m.isFinancial;
+ 
+        state.epsSource = "Laba per saham (laporan)";
+        if (!(fin(m.eps) && m.eps > 0) && shares > 0 && last.netIncome > 0) {
+            m.eps = last.netIncome / shares;
+            state.epsSource = "Dihitung: laba bersih / saham beredar";
+        }
+ 
+        // faktor kurs dari mata uang laporan ke mata uang harga
+        const fxRes = await toPriceCurrency(1, finCur, priceCur);
+        const fx = fxRes.value;
+        if (fin(price) && price > 0 && m.eps > 0 && fin(fx)) m.per = price / (m.eps * fx);
+        if (fin(price) && last.equity > 0 && shares > 0 && fin(fx)) m.pbv = price / (last.equity / shares * fx);
+        if (fxRes.note) $("priceUpdated").textContent += " · " + fxRes.note;
+ 
+        // konteks valuasi
+        const epsP = fin(fx) && m.eps > 0 ? m.eps * fx : NaN;
+        const bvps = fin(fx) && last.equity > 0 && shares > 0 ? last.equity / shares * fx : NaN;
+        const dpsRaw = ttmDividends();
+        const payout = dpsRaw > 0 && epsP > 0 ? clip(dpsRaw / epsP, 0, 1.5) : NaN;
+        const w5 = rows.slice(-5);
+        const cagrNI = cagr(w5[0].netIncome, w5[w5.length - 1].netIncome, w5.length - 1);
+        const ctx = {
+            symbol, rows, m, price, priceCur, finCur, fx, shares, epsP, bvps,
+            dps: p1.status === "fulfilled" ? dpsRaw : NaN, payout, payoutAssumed: !fin(payout), cagrNI,
+            sgr: m.roe > 0 ? m.roe / 100 * (1 - (fin(payout) ? payout : 0.4)) : NaN, hist: []
+        };
+        ctx.hist = histMultiples(ctx);
+        state.ctx = ctx;
+ 
+        // 5. KPI
+        $("revenue").textContent = fmtMoney(last.revenue, finCur);
+        $("profit").textContent = fmtMoney(last.netIncome, finCur);
+        setDelta("revenueD", prev ? calcGrowth(last.revenue, prev.revenue) : NaN);
+        setDelta("profitD", prev ? calcGrowth(last.netIncome, prev.netIncome) : NaN);
+        $("kRoe").textContent = showPercent(m.roe);
+        $("kEps").textContent = fin(m.eps) && m.eps > 0
+            ? m.eps.toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " " + finCur : NA;
+        $("kPer").textContent = showRatio(m.per);
+        $("kPbv").textContent = showRatio(m.pbv);
+ 
+        // 6. Ringkasan bisnis
+        const revG = prev ? calcGrowth(last.revenue, prev.revenue) : NaN;
+        $("businessSummary").textContent =
+            (profile.name || symbol) + " beroperasi di sektor " + (profile.sector || "yang belum tersedia") +
+            ", industri " + (profile.industry || "yang belum tersedia") + ". Pada tahun laporan " + last.year +
+            ", pendapatan tercatat " + fmtMoney(last.revenue, finCur) +
+            (fin(revG) ? " (" + (revG >= 0 ? "naik " : "turun ") + Math.abs(revG).toFixed(1) + "% dari tahun sebelumnya)" : "") +
+            " dengan margin laba bersih " + showPercent(m.npm) +
+            ". Pelajari lini produk dan segmen pendapatan di laporan tahunan untuk tahu sumber uang yang sebenarnya.";
+ 
+        // 7. Render semua
+        state.scores = computeScores(rows, m);
+        renderRatios(m, finCur);
+        renderHistory(rows, finCur);
+        buildSignals(rows, m);
+        renderScorePanel();
+        renderCharts();
+        $("csvBtn").disabled = false;
+ 
+        $("searchMessage").textContent = "Data " + symbol + " berhasil dimuat. Tahun laporan: " + last.year + " · Mata uang laporan: " + finCur;
+ 
+    } catch (error) {
+        console.error("Gagal mengambil data:", error);
+        $("searchMessage").className = "status error";
+        $("searchMessage").textContent = "Gagal memuat data: " + error.message;
+ 
+        if ($("companyName").textContent === "Memuat profil perusahaan...") {
+            $("companyName").textContent = "Profil belum tersedia";
+            $("companyDescription").textContent = "Pastikan kode saham benar dan server Python berjalan.";
+        }
+        $("businessSummary").textContent = "Data bisnis tidak tersedia.";
+        ["priceChart", "barsChart", "profChart", "growChart", "structChart", "radarBox"]
+            .forEach((id) => empty($(id), "Data tidak tersedia."));
+        $("techStats").innerHTML = '<p class="empty" style="grid-column:1/-1">Data tidak tersedia.</p>';
+        $("ratioList").innerHTML = '<p class="empty">Data tidak tersedia.</p>';
+        $("historyBox").innerHTML = '<p class="empty">Data tidak tersedia.</p>';
+        $("opportunityList").innerHTML = "<li>Data tidak tersedia.</li>";
+        $("riskList").innerHTML = "<li>Data tidak tersedia.</li>";
+    } finally {
+        document.body.classList.remove("loading");
+        $("searchButton").disabled = false;
+    }
+}
+ 
+/* ============================================================
+   EVENT
+   ============================================================ */
+$("searchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const symbol = $("stockSymbol").value.trim().toUpperCase();
+    if (symbol) loadStock(symbol);
+});
+ 
+$("quickChips").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    $("stockSymbol").value = b.textContent;
+    loadStock(b.textContent);
+});
+ 
+$("descToggle").addEventListener("click", () => {
+    const d = $("companyDescription");
+    const open = d.classList.toggle("clamp");
+    $("descToggle").textContent = open ? "Selengkapnya" : "Ringkas";
+});
+ 
+renderPredict();
+</script>
+</body>
+</html>
