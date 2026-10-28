@@ -1,18 +1,7 @@
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs, quote
 import urllib.request
-import urllib.parse
 import json
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
@@ -24,34 +13,67 @@ PRICE_RANGES = {
     "6mo": "1d", "1y": "1d", "2y": "1wk", "5y": "1wk",
 }
 
-def fetch_data(url: str):
-    try:
-        req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=15) as response:
-            return json.loads(response.read().decode('utf-8'))
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
+def fetch_data(url):
+    req = urllib.request.Request(url, headers=HEADERS)
+    with urllib.request.urlopen(req, timeout=15) as response:
+        return response.read()
 
-@app.get("/api/health")
-def health_check():
-    return {"ok": True}
+class handler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
-@app.get("/api/profile")
-def get_profile(symbol: str = Query(...)):
-    safe_symbol = urllib.parse.quote(symbol.strip().upper())
-    return fetch_data(f"https://ihsg.midoriresearch.com/api/profile?symbol={safe_symbol}")
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        params = parse_qs(parsed.query)
 
-@app.get("/api/financials")
-def get_financials(symbol: str = Query(...), period: str = Query("annual")):
-    safe_symbol = urllib.parse.quote(symbol.strip().upper())
-    return fetch_data(f"https://ihsg.midoriresearch.com/api/financials?symbol={safe_symbol}&period=annual")
+        if path == "/api/health":
+            return self.send_json(200, {"ok": True})
 
-@app.get("/api/price")
-def get_price(symbol: str = Query(...), range: str = Query("1d")):
-    safe_symbol = urllib.parse.quote(symbol.strip().upper())
-    interval = PRICE_RANGES.get(range, "1d")
-    return fetch_data(f"https://query1.finance.yahoo.com/v8/finance/chart/{safe_symbol}.JK?range={range}&interval={interval}&events=div")
+        try:
+            if path == "/api/profile":
+                symbol = params.get("symbol", [""])[0].strip().upper()
+                data = fetch_data(f"https://ihsg.midoriresearch.com/api/profile?symbol={quote(symbol)}")
+                return self.send_raw(200, data)
 
-@app.get("/api/exchange-rate")
-def get_exchange_rate():
-    return fetch_data("https://api.frankfurter.dev/v2/rate/usd/idr")
+            elif path == "/api/financials":
+                symbol = params.get("symbol", [""])[0].strip().upper()
+                data = fetch_data(f"https://ihsg.midoriresearch.com/api/financials?symbol={quote(symbol)}&period=annual")
+                return self.send_raw(200, data)
+
+            elif path == "/api/price":
+                symbol = params.get("symbol", [""])[0].strip().upper()
+                rng = params.get("range", ["1d"])[0]
+                interval = PRICE_RANGES.get(rng, "1d")
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(symbol)}.JK?range={rng}&interval={interval}&events=div"
+                data = fetch_data(url)
+                return self.send_raw(200, data)
+
+            elif path == "/api/exchange-rate":
+                data = fetch_data("https://api.frankfurter.dev/v2/rate/usd/idr")
+                return self.send_raw(200, data)
+
+            else:
+                return self.send_json(404, {"error": "Endpoint tidak ditemukan"})
+
+        except Exception as e:
+            return self.send_json(502, {"error": "Gagal mengambil data", "detail": str(e)})
+
+    def send_cors(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
+    def send_raw(self, status, data):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_cors()
+        self.end_headers()
+        self.wfile.write(data)
+
+    def send_json(self, status, payload):
+        self.send_raw(status, json.dumps(payload).encode("utf-8"))
